@@ -3,15 +3,17 @@ import { FirebaseService } from "./firebaseService.ts";
 import { NotificationRepository } from "./notificationRepository.ts";
 import { Notification } from "../_types/table.ts";
 
-interface Payload {
+type InsertPayload = {
   type: "INSERT";
   table: string;
-  notification: Notification;
-  schema: "public";
-}
+  schema: string;
+  record: Notification;
+  old_record: null;
+};
 
 Deno.serve(async (req) => {
-  const payload: Payload = await req.json();
+  const payload: InsertPayload = await req.json();
+  const notification = payload.record;
 
   const notificationRepo = new NotificationRepository();
   const profilesRepo = new ProfilesRepository();
@@ -20,7 +22,7 @@ Deno.serve(async (req) => {
   const accessToken = await firebaseService.getAccessToken();
   if (!accessToken) {
     await notificationRepo.updateNotification(
-      payload.notification.id,
+      notification.id,
       {
         completed_at: new Date().toISOString(),
         fcm_result: { fcm_token: "", status: "NO_ACCESS" },
@@ -35,11 +37,11 @@ Deno.serve(async (req) => {
     );
   }
 
-  const userId = payload.notification.user_id;
+  const userId = notification.user_id;
   const userProfile = userId && await profilesRepo.getFCMTokenByUserId(userId);
   if (!userProfile) {
     await notificationRepo.updateNotification(
-      payload.notification.id,
+      notification.id,
       {
         completed_at: new Date().toISOString(),
         fcm_result: { fcm_token: "", status: "NOT_EXIST_USER" },
@@ -56,7 +58,7 @@ Deno.serve(async (req) => {
   if (!userProfile.push_notification) {
     const fcmResult = { fcmToken: "", status: "DISABLED_PUSH_NOTIFICATION" };
     await notificationRepo.updateNotification(
-      payload.notification.id,
+      notification.id,
       {
         completed_at: new Date().toISOString(),
         fcm_result: fcmResult,
@@ -69,11 +71,11 @@ Deno.serve(async (req) => {
 
   const fcmResult = await firebaseService.sendNotification(
     userProfile.fcm_token,
-    payload.notification,
+    notification,
     accessToken,
   );
   await notificationRepo.updateNotification(
-    payload.notification.id,
+    notification.id,
     {
       completed_at: new Date().toISOString(),
       fcm_result: { fcm_token: fcmResult.fcmToken, status: fcmResult.status },
