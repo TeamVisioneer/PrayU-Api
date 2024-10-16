@@ -1,13 +1,7 @@
 import { ProfilesRepository } from "./profilesRepository.ts";
 import { FirebaseService } from "./firebaseService.ts";
 import { NotificationRepository } from "./notificationRepository.ts";
-
-interface Notification {
-  id: string;
-  user_id: string;
-  title: string | null;
-  body: string | null;
-}
+import { Notification } from "../../types/table.ts";
 
 interface Payload {
   type: "INSERT";
