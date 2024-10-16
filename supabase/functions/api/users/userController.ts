@@ -1,7 +1,7 @@
 import { Context } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import { ServiceUser } from "./userEntity.ts";
 import { UserRepository } from "./userRepository.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from "../../_shared/cors.ts";
 
 export class UserController {
   private UserRepository: UserRepository;
@@ -11,10 +11,11 @@ export class UserController {
   }
 
   async createUserV1(c: Context) {
-    const { email, name, method } = await c.req.json();
-    if (method === "OPTIONS") {
+    if (c.req.method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
+
+    const { email, name } = await c.req.json();
     if (!email || !name) {
       return new Response(
         JSON.stringify({
@@ -45,11 +46,9 @@ export class UserController {
   }
 
   async deleteUserV1(c: Context) {
-    const { method } = await c.req.json();
-    if (method === "OPTIONS") {
+    if (c.req.method === "OPTIONS") {
       return new Response("ok", { headers: corsHeaders });
     }
-
     const user = c.get("user") as ServiceUser;
     const result = await this.UserRepository.deleteUser(user.id);
     if (!result) {

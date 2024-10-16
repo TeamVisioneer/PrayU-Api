@@ -5,10 +5,8 @@ import { authMiddleware } from "./authMiddleware.ts";
 const userRouter = new Hono();
 const userController = new UserController();
 
-userRouter.use(authMiddleware);
-
+userRouter.use("*", authMiddleware);
 userRouter.post("/", (c) => userController.createUserV1(c));
-
 userRouter.delete("/", (c) => userController.deleteUserV1(c));
 
-Deno.serve(userRouter.fetch);
+export default userRouter;

@@ -1,4 +1,4 @@
-import { supabase } from "../client.ts";
+import { supabase } from "../../client.ts";
 import { User } from "https://esm.sh/@supabase/supabase-js@2.44.3";
 
 export class UserRepository {

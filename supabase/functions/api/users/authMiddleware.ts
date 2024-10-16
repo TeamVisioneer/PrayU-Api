@@ -1,5 +1,5 @@
 import { ServiceUser } from "./userEntity.ts";
-import { supabase } from "../client.ts";
+import { supabase } from "../../client.ts";
 import { Context, Next } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 
 export async function authMiddleware(c: Context, next: Next) {
