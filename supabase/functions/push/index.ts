@@ -35,9 +35,8 @@ Deno.serve(async (req) => {
     );
   }
 
-  const userProfile = await profilesRepo.getFCMTokenByUserId(
-    payload.notification.user_id,
-  );
+  const userId = payload.notification.user_id;
+  const userProfile = userId && await profilesRepo.getFCMTokenByUserId(userId);
   if (!userProfile) {
     await notificationRepo.updateNotification(
       payload.notification.id,
