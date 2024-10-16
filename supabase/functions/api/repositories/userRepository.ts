@@ -3,9 +3,9 @@ import { supabase } from "../../client.ts";
 export class UserRepository {
   async getFCMTokensByUserID(userID: string): Promise<string[]> {
     const { data, error } = await supabase
-      .from("fcm_tokens")
+      .from("profiles")
       .select("fcm_token")
-      .eq("user_id", userID);
+      .eq("id", userID);
 
     if (error) {
       // sentry
@@ -16,45 +16,32 @@ export class UserRepository {
   }
 
   async addFCMToken(userID: string, fcmToken: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from("fcm_tokens")
+    const { error } = await supabase
+      .from("profiles")
       .select("*")
       .eq("fcm_token", fcmToken)
       .single();
 
-    if (error && error.code !== "PGRST116") { // 'PGRST116'은 no rows 에러 코드
+    if (error) {
       console.error("Error selecting FCM token:", error.message);
       return false;
     }
 
-    if (data) {
-      const { error } = await supabase
-        .from("fcm_tokens")
-        .update({ user_id: userID })
-        .eq("fcm_token", fcmToken);
-      if (error) {
-        console.error("Error updating FCM token:", error.message);
-        return false;
-      }
-      return true;
-    } else {
-      const { error } = await supabase
-        .from("fcm_tokens")
-        .insert([{ user_id: userID, fcm_token: fcmToken }]);
-
-      if (error) {
-        console.error("Error inserting FCM token:", error.message);
-        return false;
-      }
-
-      return true;
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ fcm_token: fcmToken })
+      .eq("id", userID);
+    if (updateError) {
+      console.error("Error inserting FCM token:", updateError.message);
+      return false;
     }
+    return true;
   }
 
   async deleteFCMToken(userID: string, fcmToken: string): Promise<boolean> {
     const { error } = await supabase
-      .from("fcm_tokens")
-      .delete()
+      .from("profiles")
+      .update({ fcm_token: "" })
       .eq("user_id", userID)
       .eq("fcm_token", fcmToken);
 

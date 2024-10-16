@@ -6,7 +6,7 @@ export class ProfilesRepository {
       const { data, error } = await supabase
         .from("profiles")
         .select("fcm_token, push_notification")
-        .eq("user_id", userId)
+        .eq("id", userId)
         .single();
       if (error) {
         console.error("Error get User Profile:", error.message);
