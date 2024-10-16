@@ -1,17 +1,34 @@
 import { ServiceUser } from "./userEntity.ts";
 import { supabase } from "../../client.ts";
 import { Context, Next } from "https://deno.land/x/hono@v4.3.11/mod.ts";
+import { corsHeaders } from "../../_shared/cors.ts";
 
 export async function authMiddleware(c: Context, next: Next) {
+  if (c.req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ code: 401, message: "Unauthorized" }, 401);
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   const jwt = authHeader.split(" ")[1];
   const serviceUser = await decodeJWT(jwt);
   if (!serviceUser) {
-    return c.json({ code: 401, message: "Unauthorized" }, 401);
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   c.set("user", serviceUser);
