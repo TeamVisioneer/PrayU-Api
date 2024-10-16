@@ -1,4 +1,0 @@
-functions:
-  api:
-    handler:
-      src: functions/api/index.ts
