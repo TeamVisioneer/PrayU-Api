@@ -1,6 +1,15 @@
 import { supabase } from "../../client.ts";
 
 export class UserRepository {
+  async deleteUser(userId: string): Promise<boolean> {
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("Error deleting user:", error.message);
+      return false;
+    }
+    return true;
+  }
+
   async getFCMTokensByUserID(userID: string): Promise<string[]> {
     const { data, error } = await supabase
       .from("profiles")

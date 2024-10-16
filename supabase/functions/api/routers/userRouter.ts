@@ -22,4 +22,11 @@ userRouter.delete(
   (c) => userController.deleteFCMTokenV1(c),
 );
 
+userRouter.delete(
+  "v1/user",
+  (c) => userController.deleteUserV1(c),
+);
+
+userRouter.delete();
+
 export default userRouter;

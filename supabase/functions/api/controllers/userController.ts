@@ -9,6 +9,14 @@ export class UserController {
     this.UserRepository = new UserRepository();
   }
 
+  async deleteUserV1(c: Context) {
+    const user = c.get("user") as ServiceUser;
+    const result = await this.UserRepository.deleteUser(user.id);
+    return c.json(
+      result ? "User deleted successfully" : "Failed to delete user",
+    );
+  }
+
   async getFCMTokensV1(c: Context) {
     const user = c.get("user") as ServiceUser;
     const tokens = await this.UserRepository.getFCMTokensByUserID(user.id);
@@ -30,7 +38,6 @@ export class UserController {
     );
   }
 
-  // deleteFCMTokenV1 메서드는 FCM 토큰을 삭제하는 API 엔드포인트입니다.
   async deleteFCMTokenV1(c: Context) {
     const user = c.get("user") as ServiceUser;
 
