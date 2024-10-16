@@ -39,12 +39,12 @@ Deno.serve(async (req) => {
 
   const userId = notification.user_id;
   const userProfile = userId && await profilesRepo.getFCMTokenByUserId(userId);
-  if (!userProfile) {
+  if (!userProfile || !userProfile.fcm_token) {
     await notificationRepo.updateNotification(
       notification.id,
       {
         completed_at: new Date().toISOString(),
-        fcm_result: { fcm_token: "", status: "NOT_EXIST_USER" },
+        fcm_result: { fcm_token: "", status: "NOT_EXIST_FCM" },
       },
     );
     return new Response(
