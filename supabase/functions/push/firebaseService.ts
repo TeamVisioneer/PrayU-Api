@@ -1,18 +1,12 @@
 import { JWT } from "npm:google-auth-library@9";
-
-interface Notification {
-  id: string;
-  user_id: string;
-  title: string | null;
-  body: string | null;
-}
+import { Notification } from "../_types/table.ts";
 
 export class FirebaseService {
   async getAccessToken() {
     try {
       const jwtClient = new JWT({
         email: Deno.env.get("FIREBASE_CLIENT_EMAIL"),
-        key: Deno.env.get("FIREBASE_PRIVATE_KEY"),
+        key: Deno.env.get("FIREBASE_PRIVATE_KEY")!.replace(/\\n/g, "\n"),
         scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
       });
       const token = await jwtClient.authorize();

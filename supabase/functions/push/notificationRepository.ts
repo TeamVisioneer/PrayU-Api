@@ -3,7 +3,7 @@ import { supabase } from "../client.ts";
 export class NotificationRepository {
   async updateNotification(
     id: string,
-    params: { completed_at: string; fcm_result: { [key: string]: string[] } },
+    params: { completed_at: string; fcm_result: { [key: string]: string } },
   ) {
     try {
       await supabase

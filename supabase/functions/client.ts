@@ -1,9 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.44.3";
+import { Database } from "./_types/database.ts";
 
-const supabaseProjectURL = Deno.env.get("SUPA_PROJECT_URL")!;
-const supabaseServiceRoleKey = Deno.env.get("SUPA_SERVICE_ROLE_KEY")!;
-
-export const supabase = createClient(
-  supabaseProjectURL,
-  supabaseServiceRoleKey,
+export const supabase = createClient<Database>(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );

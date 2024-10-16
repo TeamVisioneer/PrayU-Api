@@ -1,35 +1,31 @@
-import { FCMTokenRepository } from "./fcmTokenRepository.ts";
+import { ProfilesRepository } from "./profilesRepository.ts";
 import { FirebaseService } from "./firebaseService.ts";
 import { NotificationRepository } from "./notificationRepository.ts";
+import { Notification } from "../_types/table.ts";
 
-interface Notification {
-  id: string;
-  user_id: string;
-  title: string | null;
-  body: string | null;
-}
-
-interface Payload {
+type InsertPayload = {
   type: "INSERT";
   table: string;
-  notification: Notification;
-  schema: "public";
-}
+  schema: string;
+  record: Notification;
+  old_record: null;
+};
 
 Deno.serve(async (req) => {
-  const payload: Payload = await req.json();
+  const payload: InsertPayload = await req.json();
+  const notification = payload.record;
 
   const notificationRepo = new NotificationRepository();
-  const fcmTokenRepo = new FCMTokenRepository();
+  const profilesRepo = new ProfilesRepository();
   const firebaseService = new FirebaseService();
 
   const accessToken = await firebaseService.getAccessToken();
   if (!accessToken) {
     await notificationRepo.updateNotification(
-      payload.notification.id,
+      notification.id,
       {
         completed_at: new Date().toISOString(),
-        fcm_result: { "NO_ACCESS": [] },
+        fcm_result: { fcm_token: "", status: "NO_ACCESS" },
       },
     );
     return new Response(
@@ -41,15 +37,14 @@ Deno.serve(async (req) => {
     );
   }
 
-  const fcmTokenData = await fcmTokenRepo.fetchFCMTokenByUserId(
-    payload.notification.user_id,
-  );
-  if (!fcmTokenData) {
+  const userId = notification.user_id;
+  const userProfile = userId && await profilesRepo.getFCMTokenByUserId(userId);
+  if (!userProfile || !userProfile.fcm_token) {
     await notificationRepo.updateNotification(
-      payload.notification.id,
+      notification.id,
       {
         completed_at: new Date().toISOString(),
-        fcm_result: { "NOT_EXIST_USER": [] },
+        fcm_result: { fcm_token: "", status: "NOT_EXIST_FCM" },
       },
     );
     return new Response(
@@ -60,18 +55,33 @@ Deno.serve(async (req) => {
       },
     );
   }
+  if (!userProfile.push_notification) {
+    const fcmResult = { fcmToken: "", status: "DISABLED_PUSH_NOTIFICATION" };
+    await notificationRepo.updateNotification(
+      notification.id,
+      {
+        completed_at: new Date().toISOString(),
+        fcm_result: fcmResult,
+      },
+    );
+    return new Response(JSON.stringify(fcmResult), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
-  const fcmTokens = fcmTokenData.map((row) => row.token);
-  const resultSummary = await firebaseService.bulkSendNotifications(
-    fcmTokens,
-    payload.notification,
+  const fcmResult = await firebaseService.sendNotification(
+    userProfile.fcm_token,
+    notification,
     accessToken,
   );
   await notificationRepo.updateNotification(
-    payload.notification.id,
-    { completed_at: new Date().toISOString(), fcm_result: resultSummary },
+    notification.id,
+    {
+      completed_at: new Date().toISOString(),
+      fcm_result: { fcm_token: fcmResult.fcmToken, status: fcmResult.status },
+    },
   );
-  return new Response(JSON.stringify(resultSummary), {
+  return new Response(JSON.stringify(fcmResult), {
     headers: { "Content-Type": "application/json" },
   });
 });
