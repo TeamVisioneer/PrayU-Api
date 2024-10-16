@@ -14,12 +14,12 @@ export class UserRepository {
     return data.user;
   }
 
-  async deleteUser(userId: string): Promise<boolean> {
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+  async deleteUser(userId: string): Promise<User | null> {
+    const { data, error } = await supabase.auth.admin.deleteUser(userId);
     if (error) {
       console.error("Error deleting user:", error.message);
-      return false;
+      return null;
     }
-    return true;
+    return data.user;
   }
 }

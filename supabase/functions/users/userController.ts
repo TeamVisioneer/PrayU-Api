@@ -1,6 +1,7 @@
 import { Context } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import { ServiceUser } from "./userEntity.ts";
 import { UserRepository } from "./userRepository.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 export class UserController {
   private UserRepository: UserRepository;
@@ -12,17 +13,52 @@ export class UserController {
   async createUserV1(c: Context) {
     const { email, name } = await c.req.json();
     if (!email || !name) {
-      return c.json({ message: "Email and name are required" }, 400);
+      return new Response(
+        JSON.stringify({
+          data: null,
+          error: "Email and name are required",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
     }
-    const user = await this.UserRepository.createUser(email, name);
-    return c.json(user);
+    const result = await this.UserRepository.createUser(email, name);
+    if (!result) {
+      return new Response(
+        JSON.stringify({ data: null, error: "Failed to create user" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        },
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ data: result, error: null }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 
   async deleteUserV1(c: Context) {
     const user = c.get("user") as ServiceUser;
     const result = await this.UserRepository.deleteUser(user.id);
-    return c.json(
-      result ? "User deleted successfully" : "Failed to delete user",
+    if (!result) {
+      return new Response(
+        JSON.stringify({ data: null, error: "Failed to delete user" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        },
+      );
+    }
+    return new Response(
+      JSON.stringify({ data: result, error: null }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      },
     );
   }
 }
