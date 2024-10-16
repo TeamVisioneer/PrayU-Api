@@ -1,5 +1,5 @@
 import { JWT } from "npm:google-auth-library@9";
-import { Notification } from "../../types/table.ts";
+import { Notification } from "../_types/table.ts";
 
 export class FirebaseService {
   async getAccessToken() {

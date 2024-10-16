@@ -1,4 +1,4 @@
-import { Database } from "./database";
+import { Database } from "./database.ts";
 
 export type Notification = Database["public"]["Tables"]["notification"]["Row"];
 
