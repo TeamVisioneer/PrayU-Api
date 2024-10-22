@@ -2,6 +2,7 @@ import { ProfilesRepository } from "./profilesRepository.ts";
 import { FirebaseService } from "./firebaseService.ts";
 import { NotificationRepository } from "./notificationRepository.ts";
 import { Notification } from "../_types/table.ts";
+import { NotificationType } from "../_types/notificationType.ts";
 
 type InsertPayload = {
   type: "INSERT";
@@ -57,6 +58,19 @@ Deno.serve(async (req) => {
   }
   if (!userProfile.push_notification) {
     const fcmResult = { fcmToken: "", status: "DISABLED_PUSH_NOTIFICATION" };
+    await notificationRepo.updateNotification(
+      notification.id,
+      {
+        completed_at: new Date().toISOString(),
+        fcm_result: fcmResult,
+      },
+    );
+    return new Response(JSON.stringify(fcmResult), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (notification.type == NotificationType.NOTICE) {
+    const fcmResult = { fcmToken: "", status: "SKIP_PUSH_NOTIFICATION" };
     await notificationRepo.updateNotification(
       notification.id,
       {
