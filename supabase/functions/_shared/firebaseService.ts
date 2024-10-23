@@ -18,9 +18,10 @@ export class FirebaseService {
   }
 
   async sendNotification(
-    fcmToken: string,
-    notification: Notification,
     accessToken: string,
+    fcmTokens: string[],
+    title: string,
+    body: string,
   ) {
     try {
       const firebaseProjectID = Deno.env.get("FIREBASE_PROJECT_ID");
@@ -34,10 +35,10 @@ export class FirebaseService {
           },
           body: JSON.stringify({
             message: {
-              token: fcmToken,
+              token: fcmTokens,
               notification: {
-                title: notification.title,
-                body: notification.body,
+                title: title,
+                body: body,
               },
             },
           }),
@@ -50,37 +51,12 @@ export class FirebaseService {
         const errorCode = resData.error?.details?.[0]?.errorCode ||
           resData.error?.status || "UNKNOWN_ERROR";
         console.error("Error sending FCM message:", errorCode);
-        return { fcmToken, status: errorCode };
+        return { status: "Error sending FCM message:" };
       } else {
-        return { fcmToken, status: "SUCCESS" };
+        return { status: "SUCCESS" };
       }
     } catch (err) {
-      console.error("Error sending FCM message:", err);
-      return { fcmToken, status: "SEND_ERROR" };
+      return { status: `Error sending FCM message: ${err.message}` };
     }
-  }
-
-  async bulkSendNotifications(
-    fcmTokens: string[],
-    notification: Notification,
-    accessToken: string,
-  ) {
-    const pushNotificationPromises = fcmTokens.map((fcmToken) =>
-      this.sendNotification(fcmToken, notification, accessToken)
-    );
-    const results = await Promise.all(pushNotificationPromises);
-    const resultSummary: { [key: string]: string[] } = { "SUCCESS": [] };
-    results.forEach(({ fcmToken, status }) => {
-      if (status === "SUCCESS") {
-        resultSummary["SUCCESS"].push(fcmToken);
-      } else {
-        if (!resultSummary[status]) {
-          resultSummary[status] = [];
-        }
-        resultSummary[status].push(fcmToken);
-      }
-    });
-
-    return resultSummary;
   }
 }
