@@ -50,8 +50,8 @@ export class FirebaseService {
       if (res.status < 200 || 299 < res.status) {
         const errorCode = resData.error?.details?.[0]?.errorCode ||
           resData.error?.status || "UNKNOWN_ERROR";
-        console.error("Error sending FCM message:", errorCode);
-        return { status: "Error sending FCM message:" };
+        console.error(`Error sending FCM message: ${errorCode}`);
+        return { status: `Error sending FCM message: ${errorCode}` };
       } else {
         return { status: "SUCCESS" };
       }
