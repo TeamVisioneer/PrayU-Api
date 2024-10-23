@@ -35,7 +35,7 @@ export class FirebaseService {
           },
           body: JSON.stringify({
             message: {
-              token: fcmTokens,
+              tokens: fcmTokens,
               notification: {
                 title: title,
                 body: body,
