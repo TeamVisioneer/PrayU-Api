@@ -1,5 +1,5 @@
 import { Context } from "https://deno.land/x/hono@v4.3.11/mod.ts";
-import { ServiceUser } from "./userEntity.ts";
+import { ServiceUser } from "../../_shared/userEntity.ts";
 import { UserRepository } from "./userRepository.ts";
 import { corsHeaders } from "../../_shared/cors.ts";
 
