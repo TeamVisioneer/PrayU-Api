@@ -1,7 +1,7 @@
 import { ServiceUser } from "./userEntity.ts";
-import { supabase } from "../../client.ts";
+import { supabase } from "../client.ts";
 import { Context, Next } from "https://deno.land/x/hono@v4.3.11/mod.ts";
-import { corsHeaders } from "../../_shared/cors.ts";
+import { corsHeaders } from "./cors.ts";
 
 export async function authMiddleware(c: Context, next: Next) {
   if (c.req.method === "OPTIONS") {
@@ -21,17 +21,7 @@ export async function authMiddleware(c: Context, next: Next) {
 
   const jwt = authHeader.split(" ")[1];
   const serviceUser = await decodeJWT(jwt);
-  if (!serviceUser) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
-  }
-
-  c.set("user", serviceUser);
+  if (serviceUser) c.set("user", serviceUser);
   await next();
 }
 

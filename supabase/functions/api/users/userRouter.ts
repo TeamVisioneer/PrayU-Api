@@ -1,6 +1,6 @@
 import { Hono } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import { UserController } from "./userController.ts";
-import { authMiddleware } from "./authMiddleware.ts";
+import { authMiddleware } from "../../_shared/authMiddleware.ts";
 
 const userRouter = new Hono();
 const userController = new UserController();
