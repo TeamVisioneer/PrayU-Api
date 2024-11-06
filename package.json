@@ -9,5 +9,10 @@
     "supabase-sync": "supabase gen types --lang=typescript --linked > supabase/types/database.ts"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.46.1",
+    "dotenv": "^16.4.5",
+    "openai": "^4.71.0"
+  }
 }
