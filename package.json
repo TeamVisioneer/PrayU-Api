@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "supabase-serve": "supabase functions serve --no-verify-jwt",
-    "supabase-sync": "supabase gen types --lang=typescript --linked > supabase/types/database.ts"
+    "supabase-sync": "supabase gen types --lang=typescript --linked > supabase/functions/_types/database.ts"
   },
   "author": "",
   "license": "ISC",

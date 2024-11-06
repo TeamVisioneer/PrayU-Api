@@ -41,4 +41,28 @@ export class OpenaiController {
     }
     return this.createResponse({ data: result }, 200);
   }
+
+  async getTextEmbedding(c: Context) {
+    const { content } = await c.req.json();
+    const result = await this.bibleCardService.getEmbeddingText(content);
+    if (!result) {
+      return this.createResponse({
+        data: null,
+        error: "Failed to get text embedding",
+      }, 500);
+    }
+    return this.createResponse({ data: { content, result } }, 200);
+  }
+
+  async getBibleVerse(c: Context) {
+    const { content } = await c.req.json();
+    const result = await this.bibleCardService.searchBible(content);
+    if (!result) {
+      return this.createResponse({
+        data: null,
+        error: "Failed to get bible verse",
+      }, 500);
+    }
+    return this.createResponse({ data: result }, 200);
+  }
 }
