@@ -62,4 +62,12 @@ export class BibleCardService {
     );
     return data;
   }
+
+  async getEmbeddingText(content: string) {
+    const apiResponse = await this.openaiClient.createEmbeddingText(
+      content,
+    );
+    if (!apiResponse) return null;
+    return apiResponse.data[0].embedding;
+  }
 }

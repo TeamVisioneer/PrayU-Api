@@ -8,5 +8,9 @@ const openaiController = new OpenaiController();
 openaiRouter.use("*", authMiddleware);
 openaiRouter.post("/bible-verse", (c) => openaiController.getBibleMessage(c));
 openaiRouter.post("/bible-image", (c) => openaiController.getNatureImage(c));
+openaiRouter.post(
+  "/text-embedding",
+  (c) => openaiController.getTextEmbedding(c),
+);
 
 export default openaiRouter;

@@ -35,4 +35,20 @@ export class OpenaiClient {
       return null;
     }
   }
+
+  async createEmbeddingText(
+    text: string,
+    model: string = "text-embedding-3-small",
+  ) {
+    try {
+      const response = await this.openai.embeddings.create({
+        model: model,
+        input: text,
+      });
+      return response;
+    } catch (error) {
+      console.error("Error embedding text:", error);
+      return null;
+    }
+  }
 }
