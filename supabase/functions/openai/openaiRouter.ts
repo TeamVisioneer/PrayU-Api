@@ -12,5 +12,6 @@ openaiRouter.post(
   "/text-embedding",
   (c) => openaiController.getTextEmbedding(c),
 );
+openaiRouter.post("/search-bible", (c) => openaiController.getBibleVerse(c));
 
 export default openaiRouter;

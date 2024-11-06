@@ -27,14 +27,6 @@ export async function authMiddleware(c: Context, next: Next) {
 
 async function decodeJWT(jwt: string): Promise<ServiceUser | null> {
   const { data, error } = await supabase.auth.getUser(jwt);
-  if (error) {
-    console.error("JWT verification failed:", error.message);
-    return null;
-  }
-  if (data.user == null) {
-    console.error("User not exist");
-    return null;
-  }
-
+  if (error || data.user == null) return null;
   return ServiceUser.fromUser(data.user);
 }
