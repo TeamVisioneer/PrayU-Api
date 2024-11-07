@@ -13,5 +13,6 @@ openaiRouter.post(
   (c) => openaiController.getTextEmbedding(c),
 );
 openaiRouter.post("/search-bible", (c) => openaiController.getBibleVerse(c));
+openaiRouter.post("/qt", (c) => openaiController.getQTcontent(c));
 
 export default openaiRouter;
