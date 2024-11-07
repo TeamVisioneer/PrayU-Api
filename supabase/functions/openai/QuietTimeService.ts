@@ -51,9 +51,7 @@ export class QuietTimeService {
     );
     if (!apiResponse) return null;
     const contentString = apiResponse?.choices[0]?.message?.content || "{}";
-
-    const cleanContentString = contentString.replace(/```json|```/g, "").trim();
-    const contentJson = JSON.parse(cleanContentString);
+    const contentJson = JSON.parse(contentString);
     return contentJson;
   }
 }
