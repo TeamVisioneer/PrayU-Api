@@ -8,8 +8,6 @@ export class QuietTimeService {
   }
 
   async getQTcontent(content: string) {
-    console.log("content", content);
-
     const prompt: string = `
     내가 지정한 성경 본문과 다음 지시에 따라 20-30대 크리스천을 위한 QT를 JSON 형식으로 작성해 주세요.
 
@@ -52,7 +50,6 @@ export class QuietTimeService {
       prompt,
     );
     if (!apiResponse) return null;
-    console.log(apiResponse);
     const contentString = apiResponse?.choices[0]?.message?.content || "{}";
 
     const cleanContentString = contentString.replace(/```json|```/g, "").trim();
