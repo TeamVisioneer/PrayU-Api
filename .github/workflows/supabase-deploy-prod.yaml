@@ -1,9 +1,8 @@
 name: Supabase Function Deploy Staging
 
 on:
-  push:
-    branches:
-      - "v*"
+  release:
+    types: [published]
 
 jobs:
   deploy:
