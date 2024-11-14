@@ -5,6 +5,7 @@ import { QuietTimeService } from "./QuietTimeService.ts";
 
 export class OpenaiController {
   private bibleCardService;
+  private quietTimeService;
 
   constructor() {
     this.bibleCardService = new BibleCardService();
@@ -67,7 +68,7 @@ export class OpenaiController {
     }
     return this.createResponse({ data: result }, 200);
   }
-  
+
   async getQTcontent(c: Context) {
     const { content } = await c.req.json();
     const result = await this.quietTimeService.getQTcontent(content);
