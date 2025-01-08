@@ -9,31 +9,46 @@ export class OnesignalController {
     this.onesignalService = new OnesignalService();
   }
 
-  private createResponse(data: unknown, status: number) {
+  private createResponse(result: { data: unknown; errors: unknown } | null) {
+    if (!result) {
+      return new Response(
+        JSON.stringify({
+          data: null,
+          error: { message: "Failed to send notification" },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        },
+      );
+    }
+    if (result.errors) {
+      return new Response(
+        JSON.stringify({
+          data: null,
+          error: { message: result.errors },
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+        },
+      );
+    }
+
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(result),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: status,
+        status: 200,
       },
     );
   }
 
   async sendNotification(c: Context) {
-    const contents = await c.req.json();
-    const result = await this.onesignalService.sendNotification(contents);
-    if (!result) {
-      return this.createResponse({
-        data: null,
-        error: { message: "Failed to send notification" },
-      }, 500);
-    }
-    if (result.errors) {
-      return this.createResponse({
-        data: null,
-        error: { message: JSON.stringify(result.errors) },
-      }, 500);
-    }
-    return this.createResponse(result, 200);
+    const requestBody = await c.req.json();
+    const result = await this.onesignalService.sendNotification(
+      requestBody,
+    );
+    return this.createResponse(result);
   }
 }
