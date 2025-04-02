@@ -42,8 +42,9 @@ export class UserController {
   }
 
   async deleteUserV1(c: Context) {
-    const user = c.get("user") as ServiceUser;
-    const result = await this.UserRepository.deleteUser(user.id);
+    const userId = c.get("userId");
+    console.log("userId", userId);
+    const result = await this.UserRepository.deleteUser(userId);
     if (!result) {
       return new Response(
         JSON.stringify({ data: null, error: "Failed to delete user" }),

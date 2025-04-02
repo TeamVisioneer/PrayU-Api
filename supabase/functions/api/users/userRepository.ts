@@ -15,11 +15,21 @@ export class UserRepository {
   }
 
   async deleteUser(userId: string): Promise<User | null> {
-    const { data, error } = await supabase.auth.admin.deleteUser(userId);
-    if (error) {
-      console.error("Error deleting user:", error.message);
+    try {
+      console.log(`Attempting to delete user with ID: ${userId}`);
+      const { data, error } = await supabase.auth.admin.deleteUser(userId);
+
+      if (error) {
+        console.error("Error deleting user:", error.message);
+        console.error("Full error details:", JSON.stringify(error));
+        return null;
+      }
+
+      console.log("User deleted successfully:", data.user);
+      return data.user;
+    } catch (err) {
+      console.error("Unexpected error during user deletion:", err);
       return null;
     }
-    return data.user;
   }
 }
