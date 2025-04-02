@@ -1,7 +1,6 @@
-import { ServiceUser } from "./userEntity.ts";
-import { supabase } from "../client.ts";
 import { Context, Next } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import { corsHeaders } from "./cors.ts";
+import { decode } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 export async function authMiddleware(c: Context, next: Next) {
   if (c.req.method === "OPTIONS") {
@@ -10,8 +9,12 @@ export async function authMiddleware(c: Context, next: Next) {
 
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("Invalid or missing Authorization header");
     return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
+      JSON.stringify({
+        error: "Unauthorized",
+        details: "Invalid or missing Authorization header",
+      }),
       {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -20,13 +23,34 @@ export async function authMiddleware(c: Context, next: Next) {
   }
 
   const jwt = authHeader.split(" ")[1];
-  const serviceUser = await decodeJWT(jwt);
-  if (serviceUser) c.set("user", serviceUser);
+  console.log("Processing request with JWT token");
+
+  const userId = decodeJWT(jwt);
+  if (!userId) {
+    console.error("Failed to authenticate user with provided JWT token");
+    return new Response(
+      JSON.stringify({
+        error: "Unauthorized",
+        details: "Invalid authentication token",
+      }),
+      {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  }
+
+  console.log("Successfully authenticated user:", userId);
+  c.set("userId", userId);
   await next();
 }
 
-async function decodeJWT(jwt: string): Promise<ServiceUser | null> {
-  const { data, error } = await supabase.auth.getUser(jwt);
-  if (error || data.user == null) return null;
-  return ServiceUser.fromUser(data.user);
+function decodeJWT(jwt: string): string | null {
+  try {
+    const [_, payload] = decode(jwt);
+    return payload ? (payload as { sub: string }).sub : null;
+  } catch (err) {
+    console.error("Error decoding JWT:", err);
+    return null;
+  }
 }
