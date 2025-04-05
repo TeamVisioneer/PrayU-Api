@@ -1,6 +1,6 @@
-import { ProfilesRepository } from "./profilesRepository.ts";
-import { FirebaseService } from "./firebaseService.ts";
-import { NotificationRepository } from "./notificationRepository.ts";
+import { ProfilesRepository } from "../_repo/profilesRepository.ts";
+import { FirebaseService } from "../_shared/firebaseService.ts";
+import { NotificationRepository } from "../_repo/notificationRepository.ts";
 import { Notification } from "../_types/table.ts";
 import { NotificationType } from "../_types/notificationType.ts";
 
@@ -84,15 +84,16 @@ Deno.serve(async (req) => {
   }
 
   const fcmResult = await firebaseService.sendNotification(
-    userProfile.fcm_token,
-    notification,
     accessToken,
+    [userProfile.fcm_token],
+    notification.title,
+    notification.body,
   );
   await notificationRepo.updateNotification(
     notification.id,
     {
       completed_at: new Date().toISOString(),
-      fcm_result: { fcm_token: fcmResult.fcmToken, status: fcmResult.status },
+      fcm_result: fcmResult,
     },
   );
   return new Response(JSON.stringify(fcmResult), {
