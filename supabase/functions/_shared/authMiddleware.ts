@@ -40,7 +40,6 @@ export async function authMiddleware(c: Context, next: Next) {
     );
   }
 
-  console.log("Successfully authenticated user:", userId);
   c.set("userId", userId);
   await next();
 }
@@ -48,6 +47,9 @@ export async function authMiddleware(c: Context, next: Next) {
 function decodeJWT(jwt: string): string | null {
   try {
     const [_, payload] = decode(jwt);
+    if ((payload as { role?: string }).role === "anon") {
+      return "anon";
+    }
     return payload ? (payload as { sub: string }).sub : null;
   } catch (err) {
     console.error("Error decoding JWT:", err);
