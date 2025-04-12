@@ -51,4 +51,14 @@ export class OnesignalController {
     );
     return this.createResponse(result);
   }
+
+  async updateUser(c: Context) {
+    const requestBody = await c.req.json();
+    const userId = c.get("userId");
+    const result = await this.onesignalService.updateUser({
+      userId,
+      body: requestBody,
+    });
+    return this.createResponse(result);
+  }
 }

@@ -1,4 +1,7 @@
-import { OnesignalClient } from "./onesignalClient.ts";
+import {
+  OnesignalClient,
+  OnesignalUpdateUserRequestBody,
+} from "./onesignalClient.ts";
 
 export class OnesignalService {
   private onesignalClient;
@@ -12,6 +15,7 @@ export class OnesignalService {
     ) as string;
     this.onesignalClient = new OnesignalClient(
       Deno.env.get("ONESIGNAL_API_KEY") as string,
+      Deno.env.get("ONESIGNAL_APP_ID") as string,
     );
   }
 
@@ -47,6 +51,17 @@ export class OnesignalService {
 
     const apiResponse = await this.onesignalClient.sendNotification(
       onesignalRequestBody,
+    );
+    return apiResponse;
+  }
+
+  async updateUser(requestBody: {
+    userId: string;
+    body: OnesignalUpdateUserRequestBody;
+  }) {
+    const apiResponse = await this.onesignalClient.updateUser(
+      requestBody.userId,
+      requestBody.body,
     );
     return apiResponse;
   }
