@@ -13,11 +13,30 @@ export type OnesignalRequestBody = {
   included_segments?: string[];
 };
 
+export type OnesignalUpdateUserRequestBody = {
+  properties?: {
+    tags?: { [key: string]: string };
+    language?: string;
+    timezone_id?: string;
+    lat?: number;
+    long?: number;
+    country?: string;
+    first_active?: number;
+    last_active?: number;
+  };
+  deltas?: {
+    session_count?: number;
+    purchases?: { sku: string; iso: string; amount: string; count: number }[];
+    session_time?: number;
+  };
+};
+
 export class OnesignalClient {
   private apiKey: string;
-
-  constructor(apiKey: string) {
+  private appId: string;
+  constructor(apiKey: string, appId: string) {
     this.apiKey = apiKey;
+    this.appId = appId;
   }
 
   async sendNotification(onesignalRequestBody: OnesignalRequestBody) {
@@ -30,6 +49,28 @@ export class OnesignalClient {
         },
         body: JSON.stringify(onesignalRequestBody),
       });
+      return response.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async updateUser(
+    userId: string,
+    onesignalUpdateUserRequestBody: OnesignalUpdateUserRequestBody,
+  ) {
+    try {
+      const response = await fetch(
+        `https://api.onesignal.com/apps/${this.appId}/users/by/external_id/${userId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Key ${this.apiKey}`,
+          },
+          body: JSON.stringify(onesignalUpdateUserRequestBody),
+        },
+      );
       return response.json();
     } catch {
       return null;
