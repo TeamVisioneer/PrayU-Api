@@ -108,7 +108,7 @@ export class OnesignalService {
           )
           .map(
             (member) => ({
-              title: `⏰ ${group.name} ${group.name} 그룹 기도`,
+              title: `⏰ ${prayTimeHour} ${group.name} 그룹 기도`,
               body: "하루 중 가장 소중한 몇 분, 함께 모여 기도해요!",
               type: "reminder",
               data: {
