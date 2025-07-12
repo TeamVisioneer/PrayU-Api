@@ -1,0 +1,185 @@
+# PrayU-Api - Supabase Edge Functions Rules
+
+## Project Overview
+PrayU-Api는 기도 중심의 종교 서비스를 위한 백엔드 API로, Supabase Edge Functions(Deno)를 기반으로 구축되었습니다.
+React 웹앱과 Flutter 앱에 필요한 비즈니스 로직과 AI 기능을 제공합니다.
+
+## Technology Stack
+- **Runtime**: Deno (Supabase Edge Functions)
+- **Framework**: Hono
+- **Database**: Supabase PostgreSQL
+- **AI Integration**: OpenAI API
+- **Language**: TypeScript
+- **Authentication**: Supabase Auth
+- **Push Notifications**: OneSignal API
+
+## Development Guidelines
+
+### General Rules
+1. **Language**: 모든 주석과 문서는 한국어를 우선 사용
+2. **Type Safety**: TypeScript strict mode 활용
+3. **Security**: 인증 및 권한 검사 철저히 수행
+4. **Performance**: Edge Functions 특성을 고려한 최적화
+
+### Project Structure
+```
+supabase/functions/
+├── _shared/              # 공통 유틸리티
+│   ├── authMiddleware.ts
+│   ├── cors.ts
+│   └── userEntity.ts
+├── _types/               # 타입 정의
+│   ├── database.ts
+│   └── table.ts
+├── api/                  # REST API 엔드포인트
+│   ├── users/
+│   └── churches/
+├── openai/              # AI 관련 기능
+├── push/                # 푸시 알림
+└── onesignal/           # OneSignal 연동
+```
+
+### Function Architecture
+- **Hono Router**: RESTful API 라우터 패턴
+- **Middleware**: 인증, CORS, 에러 핸들링 미들웨어
+- **Controller Pattern**: 비즈니스 로직 분리
+- **Service Layer**: 데이터베이스 및 외부 API 호출
+
+### Authentication & Authorization
+- **Supabase Auth**: JWT 토큰 기반 인증
+- **Middleware**: 모든 보호된 엔드포인트에 인증 미들웨어 적용
+- **RLS**: Row Level Security 정책 활용
+- **Role-based Access**: 사용자 역할별 권한 관리
+
+### Database Operations
+- **Supabase Client**: TypeScript 클라이언트 사용
+- **Type Safety**: 자동 생성된 타입 활용
+- **Query Optimization**: 효율적인 쿼리 작성
+- **Transaction**: 복잡한 작업에 트랜잭션 사용
+
+### API Design Principles
+- **RESTful**: REST API 설계 원칙 준수
+- **Consistent Response**: 일관된 응답 형식
+- **Error Handling**: 적절한 HTTP 상태 코드 및 에러 메시지
+- **Validation**: 입력 데이터 검증
+
+### CORS Configuration
+```typescript
+const corsOptions = {
+  origin: [
+    'https://www.prayu.site',
+    'https://staging.prayu.site',
+    'http://localhost:5173'
+  ],
+  credentials: true
+}
+```
+
+### File Naming Conventions
+- **Functions**: camelCase (e.g., `userController.ts`, `bibleService.ts`)
+- **Types**: PascalCase (e.g., `UserEntity.ts`, `PrayCardType.ts`)
+- **Middleware**: camelCase with descriptive suffix (e.g., `authMiddleware.ts`)
+- **Constants**: SCREAMING_SNAKE_CASE (e.g., `DEFAULT_LIMIT`, `MAX_RETRIES`)
+
+## AI Integration (OpenAI)
+
+### Bible Card Service
+- **Content Generation**: 기도 카드용 성경 구절 생성
+- **Prompt Engineering**: 한국 기독교 맥락에 맞는 프롬프트
+- **Response Parsing**: AI 응답 파싱 및 검증
+- **Fallback Strategy**: AI 실패 시 기본 구절 제공
+
+### Error Handling
+- **Rate Limiting**: OpenAI API 요청 제한 처리
+- **Timeout**: 응답 시간 초과 처리
+- **Retry Logic**: 실패 시 재시도 로직
+- **Cost Management**: API 비용 최적화
+
+## Push Notifications (OneSignal)
+
+### Notification Types
+- **기도 알림**: 개인 기도 시간 알림
+- **그룹 활동**: 그룹 기도 및 활동 알림
+- **성경 구절**: 일일 성경 구절 알림
+- **커뮤니티**: 그룹 내 상호작용 알림
+
+### Targeting
+- **User Segmentation**: 사용자 세그먼트별 알림
+- **Timezone**: 사용자 시간대 고려
+- **Personalization**: 개인화된 알림 내용
+
+## Environment Management
+```
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+OPENAI_API_KEY=
+ONESIGNAL_APP_ID=
+ONESIGNAL_REST_API_KEY=
+```
+
+## Security Best Practices
+- **API Keys**: 환경 변수로 민감 정보 관리
+- **Input Validation**: 모든 입력 데이터 검증
+- **SQL Injection**: 파라미터화된 쿼리 사용
+- **Rate Limiting**: API 호출 빈도 제한
+- **HTTPS Only**: 모든 통신 HTTPS 강제
+
+## Performance Optimization
+- **Cold Start**: Edge Functions 콜드 스타트 최적화
+- **Database Indexing**: 적절한 인덱스 설정
+- **Caching**: 적절한 캐싱 전략
+- **Connection Pooling**: 데이터베이스 연결 풀링
+
+## Error Handling Strategy
+```typescript
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+}
+```
+
+### Error Categories
+- **Validation Errors**: 400 Bad Request
+- **Authentication Errors**: 401 Unauthorized
+- **Authorization Errors**: 403 Forbidden
+- **Not Found Errors**: 404 Not Found
+- **Server Errors**: 500 Internal Server Error
+
+## Testing Strategy
+- **Unit Tests**: Deno test runner
+- **Integration Tests**: API 엔드포인트 테스트
+- **Load Tests**: 성능 및 부하 테스트
+- **Security Tests**: 보안 취약점 테스트
+
+## Deployment & Monitoring
+- **Supabase CLI**: 함수 배포 및 관리
+- **Logging**: 적절한 로깅 레벨 설정
+- **Monitoring**: 성능 및 에러 모니터링
+- **Alerts**: 중요 이벤트 알림 설정
+
+## Key Features Context
+- **사용자 관리**: 회원가입, 로그인, 프로필 관리
+- **교회 관리**: 교회 정보 및 멤버 관리
+- **기도 카드 생성**: AI 기반 성경 구절 추천
+- **그룹 기능**: 기도 그룹 생성 및 관리
+- **알림 시스템**: 다양한 알림 유형 처리
+
+## Code Style
+- **Indentation**: 2 spaces
+- **Quotes**: Double quotes for strings
+- **Semicolons**: Required
+- **Trailing Commas**: Preferred
+- **Import Order**: Deno std → Third-party → Local
+
+## Database Schema Conventions
+- **Table Names**: snake_case (e.g., `pray_cards`, `user_groups`)
+- **Column Names**: snake_case (e.g., `created_at`, `user_id`)
+- **Foreign Keys**: `{table_name}_id` format
+- **Timestamps**: `created_at`, `updated_at` 필수
+
+Remember: This is a Korean religious service API focused on prayer and community building. Ensure all AI-generated content respects Christian values and Korean cultural context. Prioritize security, performance, and reliable service for supporting users' spiritual journey. 

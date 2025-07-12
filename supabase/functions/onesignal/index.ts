@@ -16,6 +16,11 @@ onesignalRouter.patch(
   (c) => onesignalController.updateUser(c),
 );
 
+onesignalRouter.post(
+  "/notifications/reminder",
+  (c) => onesignalController.sendReminderNotification(c),
+);
+
 app.basePath("/onesignal")
   .route("/", onesignalRouter);
 
