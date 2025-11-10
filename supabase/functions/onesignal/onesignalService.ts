@@ -69,7 +69,8 @@ export class OnesignalService {
           member!inner( user_id )
         `)
         .eq("pray_time", requestBody.prayTime)
-        .is("deleted_at", null);
+        .is("deleted_at", null)
+        .is("member.deleted_at", null);
 
       if (groupError) {
         throw new Error(`Failed to fetch groups: ${groupError.message}`);
@@ -109,7 +110,7 @@ export class OnesignalService {
           .map(
             (member) => ({
               title: `⏰ ${prayTimeHour} ${group.name} 그룹 기도`,
-              body: "하루 중 가장 소중한 몇 분, 함께 모여 기도해요!",
+              body: "하루 중 가장 소중한 기도시간, 함께 모여 기도해요.",
               type: "reminder",
               data: {
                 url: "/notifications",
