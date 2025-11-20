@@ -66,7 +66,7 @@ export class OnesignalService {
         .select(`
           id,
           name,
-          member!inner( user_id )
+          member!inner( user_id, deleted_at )
         `)
         .eq("pray_time", requestBody.prayTime)
         .is("deleted_at", null)
@@ -104,8 +104,10 @@ export class OnesignalService {
 
       groups.forEach((group) => {
         const notificationParams: NotificationParams[] = group.member
-          .filter((member): member is { user_id: string } =>
-            member.user_id !== null
+          .filter((
+            member,
+          ): member is { user_id: string; deleted_at: string | null } =>
+            member.user_id !== null && member.deleted_at === null
           )
           .map(
             (member) => ({
@@ -155,7 +157,7 @@ export class OnesignalService {
       const notificationData = {
         title: `⏰ ${prayTimeHour} 그룹 기도`,
         subtitle: ``,
-        message: "하루 중 가장 소중한 몇 분, 함께 모여 기도해요!",
+        message: "하루 중 가장 소중한 기도시간, 함께 모여 기도해요!",
         data: {
           url: "/notifications",
           pray_time: requestBody.prayTime,
