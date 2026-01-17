@@ -2,7 +2,7 @@ import type { AIClient } from "./aiClient.ts";
 
 export class GeminiClient implements AIClient {
   private apiKey: string;
-  private model: string = "gemini-2.5-flash";
+  private model: string = "gemini-2.0-flash-lite";
   private baseUrl: string = "https://generativelanguage.googleapis.com/v1beta";
 
   constructor(apiKey: string) {

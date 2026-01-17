@@ -1,1 +1,2 @@
+supabase start
 supabase functions serve --env-file ./.env --no-verify-jwt
