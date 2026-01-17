@@ -1,13 +1,19 @@
-import { GeminiClient } from "../_shared/ai/geminiClient.ts";
+// import { GeminiClient } from "../_shared/ai/geminiClient.ts";
+import { OpenaiClient } from "../_shared/ai/openaiClient.ts";
+import { AIClient } from "../_shared/ai/aiClient.ts";
 import { BibleRepository } from "./bibleRepository.ts";
-import { BibleSearchResponse } from "./bibleSchema.ts";
+import {
+  BibleSearchResponse,
+  BibleSearchResponseSchema,
+} from "./bibleSchema.ts";
+import { Bible } from "../_types/table.ts";
 
 export class BibleService {
-  private aiClient: GeminiClient;
+  private aiClient: AIClient;
   private bibleRepository: BibleRepository;
 
   constructor() {
-    this.aiClient = new GeminiClient(Deno.env.get("GEMINI_API_KEY") || "");
+    this.aiClient = new OpenaiClient(Deno.env.get("OPENAI_SECRET_KEY") || "");
     this.bibleRepository = new BibleRepository();
   }
 
@@ -22,7 +28,7 @@ export class BibleService {
         - 응답은 정해진 JSON 형식으로 응답하세요.
       example:
         {
-          "data": [
+          "bible": [
             {
               "longLabel": "로마서",
               "chapter": 1,
@@ -39,53 +45,35 @@ export class BibleService {
               "paragraph": 1,
             },
           ],
+          "keywords": ["키워드1", "키워드2", "키워드3"],
         }
     `;
-    const responseSchema = {
-      type: "object",
-      properties: {
-        data: {
-          type: "array",
-          description: "성경 말씀 구절 목록",
-          items: {
-            type: "object",
-            properties: {
-              longLabel: {
-                type: "string",
-                description: "성경책 이름 (예: 로마서, 마태복음, 사도행전)",
-              },
-              chapter: {
-                type: "integer",
-                description: "장 번호",
-              },
-              paragraph: {
-                type: "integer",
-                description: "절 번호",
-              },
-            },
-            required: ["longLabel", "chapter", "paragraph"],
-          },
-        },
-      },
-      required: ["data"],
-    };
-    const chatResponse = await this.aiClient.chat(
+
+    const rawResponse = await this.aiClient.chat(
       systemPrompt,
       userPrompt,
-      responseSchema,
-    );
-    const parsedResponse = BibleSearchResponse.parse(chatResponse);
-    const bibleList = await Promise.all(
-      parsedResponse.data.map(async (item) => {
-        const bible = await this.bibleRepository.getBible(
-          item.longLabel,
-          item.chapter,
-          item.paragraph,
-        );
-        return bible;
-      }),
+      BibleSearchResponseSchema,
     );
 
-    return bibleList.filter((bible) => bible !== null);
+    const chatResponse = BibleSearchResponse.parse(rawResponse);
+    const bibleList = await Promise.all(
+      chatResponse.bible.map(
+        async (
+          item: { longLabel: string; chapter: number; paragraph: number },
+        ) => {
+          const bible = await this.bibleRepository.getBible(
+            item.longLabel,
+            item.chapter,
+            item.paragraph,
+          );
+          return bible;
+        },
+      ),
+    );
+
+    return {
+      bible: bibleList.filter((bible: Bible | null) => bible !== null),
+      keywords: chatResponse.keywords,
+    };
   }
 }
