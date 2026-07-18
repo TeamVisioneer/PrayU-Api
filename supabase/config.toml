@@ -167,6 +167,13 @@ enabled = false
 client_id = ""
 # DO NOT commit your OAuth provider secret to git. Use environment variable substitution instead:
 secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+
+# Kakao 로그인 (웹은 signInWithIdToken 방식이라 provider 활성화 + REST API key/secret 만 있으면 됨)
+# 값은 .env 의 SUPABASE_AUTH_EXTERNAL_KAKAO_* 에서 주입 — supabase start 전에 shell 에 로드 필요
+[auth.external.kakao]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_KAKAO_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_KAKAO_SECRET)"
 # Overrides the default auth redirectUrl.
 redirect_uri = ""
 # Overrides the default auth provider URL. Used to support self-hosted gitlab, single-tenant Azure,

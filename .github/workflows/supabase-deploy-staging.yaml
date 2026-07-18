@@ -18,6 +18,6 @@ jobs:
 
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
 
       - run: supabase functions deploy --project-ref $PROJECT_ID
