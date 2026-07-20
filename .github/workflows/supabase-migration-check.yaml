@@ -1,0 +1,25 @@
+name: Supabase Migration Check
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "supabase/config.toml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      # 로컬 Postgres 를 띄워 마이그레이션 전체 + 시드를 처음부터 재생한다.
+      # 여기서 실패하면 staging/prod 배포에서도 실패한다 — merge 전에 잡는다.
+      - run: supabase db start
+
+      - run: supabase db reset --local
