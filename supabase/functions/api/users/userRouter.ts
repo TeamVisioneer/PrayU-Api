@@ -6,7 +6,6 @@ const userRouter = new Hono();
 const userController = new UserController();
 
 userRouter.use("*", authMiddleware);
-userRouter.post("/", (c) => userController.createUserV1(c));
 userRouter.delete("/", (c) => userController.deleteUserV1(c));
 
 export default userRouter;
