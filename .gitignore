@@ -2,8 +2,9 @@
 .branches
 .temp
 
-# env
+# env (.env.local은 로컬 데모값이라 커밋 대상)
 .env
+.env.serve
 
 # node_modules
 node_modules

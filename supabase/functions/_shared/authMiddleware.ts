@@ -25,7 +25,7 @@ export async function authMiddleware(c: Context, next: Next) {
   const jwt = authHeader.split(" ")[1];
   console.log("Processing request with JWT token");
 
-  if (jwt === Deno.env.get("SUPA_PROJECT_SERVICE_ROLE_KEY")) {
+  if (jwt === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
     c.set("userId", "service_role");
     await next();
     return;
