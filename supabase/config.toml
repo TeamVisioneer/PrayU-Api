@@ -207,3 +207,17 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# Edge Functions — 게이트웨이 JWT 검증을 명시 (배포 기본값이지만 전제를 코드에 남긴다)
+# authMiddleware도 자체적으로 auth.getUser로 서명 검증하므로 이중 안전망
+[functions.api]
+verify_jwt = true
+
+[functions.bible]
+verify_jwt = true
+
+[functions.onesignal]
+verify_jwt = true
+
+[functions.openai]
+verify_jwt = true
