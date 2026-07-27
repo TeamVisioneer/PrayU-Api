@@ -41,27 +41,16 @@ create index "idx_notice_active"
 
 alter table "public"."notice" enable row level security;
 
--- 읽기: 로그인 사용자에게 활성·기간 내 공지만 보인다 (작성 중인 공지 유출 방지).
--- 행 가시성만 DB에서 강제하고, 노출 규칙(1회 노출·target 필터)은 앱이 담당한다.
-create policy "select active notice"
+-- 읽기: 로그인 사용자에게 열어둔다.
+-- 어떤 공지를 언제 보여줄지(활성·기간·대상·1회 노출)는 노출 규칙이므로 앱이 판단한다.
+-- 공지는 어차피 전 사용자에게 보여줄 내용이라 작성 중인 초안이 보이는 정도는 감수한다.
+create policy "select notice"
     on "public"."notice"
     for select
     to authenticated
-    using (
-        is_active
-        and starts_at <= now()
-        and (ends_at is null or ends_at > now())
-    );
+    using (true);
 
--- 어드민은 비활성·예약 공지까지 조회하고 관리할 수 있다
-create policy "admin select all notice"
-    on "public"."notice"
-    for select
-    to authenticated
-    using (
-        coalesce((select p.is_admin from "public"."profiles" p where p.id = auth.uid()), false)
-    );
-
+-- 쓰기는 권한 문제다 — 임의 사용자가 전 사용자에게 노출되는 공지를 만들거나 바꿀 수 없어야 한다
 create policy "admin write notice"
     on "public"."notice"
     for all
