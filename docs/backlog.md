@@ -1,0 +1,60 @@
+# PrayU-Api 백로그
+
+이 레포(스키마·Edge Functions·운영 설정)에서 해야 할 일의 **원본 목록**.
+세션 기록은 휘발되므로 **여기에 없으면 없는 것**이다.
+
+관련 백로그: [PrayU-web/docs/backlog.md](../../PrayU-web/docs/backlog.md) · `PrayU-App/docs/backlog.md`
+보안 상세: [PrayU-web/docs/security-backlog.md](../../PrayU-web/docs/security-backlog.md) · 운영 설정 대장: [supabase-migration-plan.md](../../PrayU-web/docs/supabase-migration-plan.md)
+
+> **기록 규칙**: 작업 중 후속 이슈를 발견하면 그 자리에서 여기에 추가한다(PR 코멘트로만 남기지 않는다).
+> 상세 설계는 별도 `docs/*-plan.md`로 만들고 여기서는 한 줄 + 링크. 완료 시 삭제하지 말고 "완료"로 옮긴다.
+
+---
+
+## 진행 중 — 어드민 개편
+
+계획: [PrayU-web/docs/admin-revamp-plan.md](../../PrayU-web/docs/admin-revamp-plan.md) (4개 PR, merge는 **Api 먼저 → web**)
+
+- [x] **PR A** `profiles.is_admin` + `notice` 테이블 + RLS — [#39](https://github.com/TeamVisioneer/PrayU-Api/pull/39) 리뷰 대기
+- [ ] **PR C** `admin` edge function — Hono 라우팅 + `requireAdmin`, 집계는 TS(RPC 미사용), `config.toml`에 `verify_jwt = true`
+
+## 다음 작업
+
+### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
+사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
+`is_admin`과 같은 원인(컬럼을 제한하지 않는 UPDATE 정책)이며, 조치도 같다 — 컬럼 단위 UPDATE 권한 회수.
+지금 못 막는 이유: 어드민 화면이 **클라이언트에서 직접** 이 컬럼에 쓴다 → 잠그면 어드민 기능이 먼저 깨진다.
+→ PR C에서 어드민 쓰기를 함수 경유로 옮긴 뒤 함께 잠근다. 상세: [security-backlog.md](../../PrayU-web/docs/security-backlog.md) 8번
+
+### 기타
+- [ ] QT 응답 토큰을 `llm_usage_log`에 기록 (현재 호출 수만 차감)
+- [ ] `deno.lock` 커밋 여부 결정
+- [ ] 어드민 통계가 느려지면: 인덱스 → 기간 축소 → **야간 롤업**(pg_cron이 `admin` 함수 호출 → `daily_stats` 적재, 로직은 앱에 유지)
+
+## 운영 조작 대기 (사람이 직접)
+
+- [ ] **카카오 콘솔 웹훅 등록(prod)** — Api release 후 `https://qggewtakkrwcclyxtxnz.supabase.co/functions/v1/kakao-webhook`, 메서드 **POST**. staging은 등록 완료
+- [ ] **`KAKAO_ADMIN_KEY` 시크릿 확인** — 각 환경 시크릿이 해당 카카오 앱 어드민 키와 일치하는지
+- [ ] **카카오 [플랫폼] > [Web] 사이트 도메인** — prod 앱에 서비스 도메인 등록 확인 (staging에서 4019 `domain mismatched`로 겪은 항목)
+- [ ] **prod 대시보드에서 `push` 함수 수동 삭제** — 코드에서는 제거됨(web#37 짝 작업)
+- [ ] **운영 관리자 계정에 `is_admin = true` 설정** — #39 배포 후
+- [ ] **Supabase 커스텀 도메인 도입 여부 결정** (`staging-api.prayu.site` / `api.prayu.site`) — 유료 애드온 + CNAME/TXT + `supabase domains activate`. 도입 시 카카오 로그인 Redirect URI에 새 도메인 콜백 추가 필요
+
+## 보안 (상세는 security-backlog.md)
+
+- 🔴 8번 `premium_expired_at` 자기부여 (위 참조)
+- 🔴 2번 Kakao client secret 프론트 노출 → 토큰 교환을 Edge Function으로
+- 🔴 1번 RLS 전면 정비 (그룹 격리 부재 — 로그인만 하면 타 그룹 기도제목 조회 가능)
+- ⚠️ 3번 service_role 키 로테이션 (prod `cron.job` 하드코딩과 동시 갱신 필요)
+- 4번 어드민 권한 이메일 하드코딩 제거 (`profiles`의 `admin can update user profile` 정책)
+
+## 완료
+
+| 날짜 | 내용 | PR |
+|---|---|---|
+| 2026-07-27 | `is_admin` + `notice` 테이블, `is_admin` 자기부여 차단, 공지 노출 조건을 앱으로 이동 | #39 |
+| 2026-07-27 | 카카오 공유 보상 — 웹훅 수신 + 말씀카드 동적 한도 | #38 |
+| 2026-07-26 | QT LLM 일일 한도(10회) | #35 |
+| 2026-07-26 | authMiddleware JWT 서명 검증 | #36 |
+| 2026-07-26 | `POST /api/users`·`push` 함수 제거 | #37 |
+| 2026-07-25 | `llm_usage_log` 테이블 + 말씀카드 일일 한도 | #33, #34 |
