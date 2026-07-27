@@ -16,7 +16,8 @@
 계획: [PrayU-web/docs/admin-revamp-plan.md](../../PrayU-web/docs/admin-revamp-plan.md) (4개 PR, merge는 **Api 먼저 → web**)
 
 - [x] **PR A** `profiles.is_admin` + `notice` 테이블 + RLS — [#39](https://github.com/TeamVisioneer/PrayU-Api/pull/39) 리뷰 대기
-- [ ] **PR C** `admin` edge function — Hono 라우팅 + `requireAdmin`, 집계는 TS(RPC 미사용), `config.toml`에 `verify_jwt = true`
+- [x] ~~**PR C** `admin` edge function~~ — **폐기**. 대시보드가 읽을 테이블(`profiles`/`group`/`member`/`pray`/`pray_card`)이 이미 `select using(true)`라 함수를 세워도 실질 보호가 0이고 배포 대상만 늘어난다. 대신 사용 로그 읽기만 개방 → [#40](https://github.com/TeamVisioneer/PrayU-Api/pull/40)
+- [ ] **RLS 전면 정비 시 재검토** — security-backlog 1번으로 `group`/`member`/`pray`/`pray_card`가 잠기면 web 대시보드의 클라이언트 조회가 깨진다. 그때 관리자 select 정책 추가 또는 서버 경유로 전환 판단
 
 ## 다음 작업
 
