@@ -221,3 +221,8 @@ verify_jwt = true
 
 [functions.openai]
 verify_jwt = true
+
+# 카카오 웹훅: 카카오 서버는 JWT를 보내지 않으므로 게이트웨이 검증 제외.
+# 함수 내부의 KakaoAK 어드민 키 대조가 유일한 방어선이다 (kakao-webhook/index.ts 참조)
+[functions.kakao-webhook]
+verify_jwt = false

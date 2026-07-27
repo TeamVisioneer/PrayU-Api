@@ -8,8 +8,10 @@ import {
 } from "./bibleSchema.ts";
 import { Bible } from "../_types/table.ts";
 import { LlmUsageRepository } from "../_shared/llmUsageRepository.ts";
+import { ShareRewardRepository } from "../_shared/shareRewardRepository.ts";
 
 // 말씀카드 일일 생성 한도 — bible_card 피처의 정책이므로 이 파일에 둔다 (서버가 진실, web 상수는 표시용)
+// 실제 한도 = 기본값 + 당일 공유 보상 수 (docs: PrayU-web/docs/share-reward-plan.md)
 const DAILY_LIMIT = Number(Deno.env.get("BIBLE_CARD_DAILY_LIMIT") ?? "3");
 
 export class DailyLimitExceededError extends Error {
@@ -22,11 +24,13 @@ export class BibleService {
   private aiClient: AIClient;
   private bibleRepository: BibleRepository;
   private llmUsageRepository: LlmUsageRepository;
+  private shareRewardRepository: ShareRewardRepository;
 
   constructor() {
     this.aiClient = new OpenaiClient(Deno.env.get("OPENAI_SECRET_KEY") || "");
     this.bibleRepository = new BibleRepository();
     this.llmUsageRepository = new LlmUsageRepository();
+    this.shareRewardRepository = new ShareRewardRepository();
   }
 
   async searchBible(userId: string, userPrompt: string, prayCardId?: string) {
@@ -62,8 +66,13 @@ export class BibleService {
     `;
 
     const used = await this.llmUsageRepository.countToday(userId, "bible_card");
-    if (used >= DAILY_LIMIT) {
-      throw new DailyLimitExceededError(DAILY_LIMIT, used);
+    const rewards = await this.shareRewardRepository.countToday(
+      userId,
+      "bible_card",
+    );
+    const limit = DAILY_LIMIT + rewards;
+    if (used >= limit) {
+      throw new DailyLimitExceededError(limit, used);
     }
 
     // LLM 호출 "전"에 기록해 실패·타임아웃 호출도 차감 (재시도 폭탄 방지)
