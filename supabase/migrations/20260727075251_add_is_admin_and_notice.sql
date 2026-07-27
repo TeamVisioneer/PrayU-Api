@@ -5,6 +5,17 @@
 alter table "public"."profiles"
     add column "is_admin" boolean not null default false;
 
+-- profiles의 UPDATE 정책은 "본인 행"만 볼 뿐 컬럼을 가리지 않는다.
+-- 그대로 두면 사용자가 자기 행의 is_admin을 true로 바꿔 관리자가 될 수 있으므로
+-- 테이블 단위 UPDATE 권한을 회수하고 is_admin을 제외한 컬럼만 다시 부여한다.
+-- (컬럼 추가 시 이 목록에도 넣어야 한다 — 누락되면 해당 컬럼 수정이 즉시 실패해 드러난다)
+revoke update on table "public"."profiles" from anon, authenticated;
+grant update (
+    updated_at, username, full_name, avatar_url, website,
+    kakao_id, kakao_notification, terms_agreed_at, blocking_users,
+    push_notification, fcm_token, created_at, app_settings, premium_expired_at
+) on table "public"."profiles" to authenticated;
+
 -- 공지: 그동안 코드에 하드코딩되어 문구 수정·중단에 배포가 필요했다(#403 "공지 모달 내리기" 핫픽스).
 -- 슬라이드 이미지는 웹 레포의 /images/notice/*.png 경로 문자열로 둔다 — Storage 도입 시 절대 URL도 수용.
 create table "public"."notice" (
