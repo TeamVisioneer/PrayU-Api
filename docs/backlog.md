@@ -21,6 +21,17 @@
 
 ## 다음 작업
 
+### 성경 본문 원본 동기화 — 리뷰·배포 대기
+[#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) · 상세: [bible-sync-plan.md](bible-sync-plan.md)
+
+본문 5,538행 교정 + 누락 절 14행 + `paragraph=0` 유령 행 50행 삭제. 재생 후 원본과 재대조해 **불일치 0건**.
+`seed.sql`도 교정본으로 재생성 — 이후 리셋에서 되돌아가지 않는다(이전 갱신이 사라진 원인으로 추정되는 지점).
+
+- [ ] ⚠️ **배포 순서가 평소와 반대: web 먼저 → Api.** web은 새 스키마에 의존하지 않는 반면, Api가 먼저 나가면 본문에 들어온 `○`가 **구버전 web에 그대로 노출**된다
+- [ ] **staging 확인 항목**: QT 본문 표시에 `○`·`<구역제목>` 없음 / 기존에 빈 결과였던 절이 나옴(신 15:5, 시 92:2-3, 렘 32:4-5, 겔 24:5 등 14절) / 말씀카드 생성 본문
+- [ ] `supabase/tests/*`(원본 대조·갱신 스크립트) 커밋 여부 결정 — 현재 로컬에만 있다. 이번 조사에 실제로 쓴 도구라 다음에도 필요할 가능성이 높다
+- [ ] **재발 방지**: seed 를 prod 덤프로 갱신할 때 원본 대조본을 덮지 않도록 주의. 다음 갱신 시 `bible` 테이블은 seed 쪽을 진실 원천으로 둔다
+
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
 `is_admin`과 같은 원인(컬럼을 제한하지 않는 UPDATE 정책)이며, 조치도 같다 — 컬럼 단위 UPDATE 권한 회수.
@@ -34,6 +45,7 @@
 
 ## 운영 조작 대기 (사람이 직접)
 
+- [ ] ⚠️ **prod release 순서 — 성경 동기화 건만 web 먼저 → Api.** 평소 규칙(Api 먼저)의 예외다. 근거는 위 "성경 본문 원본 동기화" 절
 - [ ] **카카오 콘솔 웹훅 등록(prod)** — Api release 후 `https://qggewtakkrwcclyxtxnz.supabase.co/functions/v1/kakao-webhook`, 메서드 **POST**. staging은 등록 완료
 - [ ] **`KAKAO_ADMIN_KEY` 시크릿 확인** — 각 환경 시크릿이 해당 카카오 앱 어드민 키와 일치하는지
 - [ ] **카카오 [플랫폼] > [Web] 사이트 도메인** — prod 앱에 서비스 도메인 등록 확인 (staging에서 4019 `domain mismatched`로 겪은 항목)
