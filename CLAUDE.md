@@ -31,6 +31,18 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 **예정**: `premium_expired_at`도 같은 이유(권한 상승·매출 직결)로 컬럼 권한 회수 예정 —
 어드민 쓰기를 `admin` edge function으로 옮긴 뒤. 상세: `docs/backlog.md`
 
+## 로컬 개발 데이터
+
+```bash
+./scripts/dev.sh        # 로컬 스택 (마이그레이션 + bible 시드)
+./scripts/seed-dev.sh   # 개발용 계정 3개 + 그룹·기도카드 더미 데이터
+```
+
+- 로그인은 카카오·애플 전용이라 로컬에서는 web 의 `/dev/login`(개발 빌드 전용)으로 시드 계정에 들어간다
+- `supabase/dev/seed-dev.sql` 은 `db reset` 이 읽지 않는다 — 초기화 후에는 `seed-dev.sh` 를 다시 돌린다
+- 계정 삭제 경로는 만들지 않았다. **회원 탈퇴 자체가 FK 때문에 실패하는 문제**가 있다 → [docs/backlog.md](docs/backlog.md)
+- 상세: [docs/dev-seed-plan.md](docs/dev-seed-plan.md)
+
 ## 신규 엔드포인트 체크리스트
 
 함수는 전부 service role 클라이언트(RLS 우회)를 쓰므로 **함수 코드가 권한 검사의 전부**다. 라우트 추가 시:
