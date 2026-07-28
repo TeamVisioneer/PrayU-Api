@@ -32,6 +32,36 @@ staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 - [ ] `supabase/tests/*`(원본 대조·갱신 스크립트) 커밋 여부 결정 — 현재 로컬에만 있다. 이번 조사에 실제로 쓴 도구라 다음에도 필요할 가능성이 높다
 - [ ] **재발 방지**: seed 를 prod 덤프로 갱신할 때 원본 대조본을 덮지 않도록 주의. 다음 갱신 시 `bible` 테이블은 seed 쪽을 진실 원천으로 둔다
 
+### 🔴 회원 탈퇴가 실제로 삭제되지 않는다 — 로컬 실증
+
+개발 계정 실험 중 발견. `api/users` 의 `deleteUser()` 는 `supabase.auth.admin.deleteUser(userId)`(하드 삭제)만 호출하는데,
+`profiles_id_fkey` 가 **NO ACTION** 이라 `profiles` 행이 있는 한 **항상 실패**한다. 모든 사용자에게 `profiles` 행이 있다.
+
+```
+23503: update or delete on table "users" violates foreign key constraint "profiles_id_fkey" on table "profiles"
+```
+
+- FK 는 [initial_baseline.sql:564](../supabase/migrations/20260718075321_initial_baseline.sql) 정의 그대로이므로 **prod 도 동일**하다
+- 웹(`SettingDialog`)은 `await deleteUser(userId)` 의 **반환값을 확인하지 않고** 바로 로그아웃·홈 이동한다 → 사용자는 탈퇴됐다고 믿는다
+- `profiles` 를 참조하는 FK 중 `bible_card`·`group_union`·`llm_usage_log`·`share_reward_log` 도 NO ACTION 이라, `profiles` 행부터 지우려 해도 같은 벽에 막힌다
+
+**개인정보 삭제 요청 미이행**에 해당할 수 있어 우선순위가 높다. 조치 방향은 결정이 필요하다:
+FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭제(`should_soft_delete`)로 갈지 —
+그룹장이 탈퇴하면 그룹은 어떻게 되는지 같은 도메인 판단이 함께 필요하다.
+
+- [ ] 조치 방향 결정 후 수정 (인증·권한 로직이라 **사람 확인 후 진행**)
+- [ ] web 짝: 탈퇴 실패를 사용자에게 알리도록 `SettingDialog` 반환값 처리
+
+### 개발용 계정·더미 데이터 — 계획 승인 대기
+계획: [dev-seed-plan.md](dev-seed-plan.md)
+
+로그인이 카카오 전용이라 로그인 뒤 화면을 도구가 열 수 없다(공지 스크린샷·UI 회귀 확인이 전부 사람 몫).
+로컬 이메일 로그인이 실제로 동작함을 확인했다 — 계정 생성·`profiles` 트리거·웹 세션 획득까지 성공.
+**seed 는 원격에 나가지 않으므로**(배포는 `db push` + `functions deploy` 뿐) 유출 위험은 없다.
+
+- [ ] `scripts/seed-dev.sh` + `supabase/dev/seed-dev.sql` — 계정 3개 + 그룹·기도카드 더미 데이터(멱등)
+- [ ] web 짝: `DevLoginPage` + `import.meta.env.DEV` 가드 라우트 (prod 번들에서 제외 확인이 검증 기준)
+
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
 `is_admin`과 같은 원인(컬럼을 제한하지 않는 UPDATE 정책)이며, 조치도 같다 — 컬럼 단위 UPDATE 권한 회수.
