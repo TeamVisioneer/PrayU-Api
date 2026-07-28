@@ -21,14 +21,14 @@
 
 ## 다음 작업
 
-### 성경 본문 원본 동기화 — 리뷰·배포 대기
-[#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) · 상세: [bible-sync-plan.md](bible-sync-plan.md)
+### 성경 본문 원본 동기화 — staging 반영 완료, prod 대기
+[#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) merged (2026-07-28) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) merged · 상세: [bible-sync-plan.md](bible-sync-plan.md)
 
-본문 5,538행 교정 + 누락 절 14행 + `paragraph=0` 유령 행 50행 삭제. 재생 후 원본과 재대조해 **불일치 0건**.
-`seed.sql`도 교정본으로 재생성 — 이후 리셋에서 되돌아가지 않는다(이전 갱신이 사라진 원인으로 추정되는 지점).
+**staging DB 반영 확인** (2026-07-28): 31,138 → **31,102행** · 신 15:5 등 누락 절 복구 · `paragraph=0` **0행**.
+staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 
-- [ ] ⚠️ **배포 순서가 평소와 반대: web 먼저 → Api.** web은 새 스키마에 의존하지 않는 반면, Api가 먼저 나가면 본문에 들어온 `○`가 **구버전 web에 그대로 노출**된다
-- [ ] **staging 확인 항목**: QT 본문 표시에 `○`·`<구역제목>` 없음 / 기존에 빈 결과였던 절이 나옴(신 15:5, 시 92:2-3, 렘 32:4-5, 겔 24:5 등 14절) / 말씀카드 생성 본문
+- [ ] **staging UI 확인**(로그인 필요라 사람이 직접): QT 본문·말씀카드 생성 본문에 `○`·`<구역제목>` 없음 / 구절 픽커에서 기존에 빈 결과였던 절이 나옴(신 15:5, 시 92:2-3, 렘 32:4-5, 겔 24:5 등 14절)
+- [ ] ⚠️ **prod release 순서가 평소와 반대: web 먼저 → Api.** web은 새 스키마에 의존하지 않는 반면, Api가 먼저 나가면 본문에 들어온 `○`가 **구버전 web에 그대로 노출**된다
 - [ ] `supabase/tests/*`(원본 대조·갱신 스크립트) 커밋 여부 결정 — 현재 로컬에만 있다. 이번 조사에 실제로 쓴 도구라 다음에도 필요할 가능성이 높다
 - [ ] **재발 방지**: seed 를 prod 덤프로 갱신할 때 원본 대조본을 덮지 않도록 주의. 다음 갱신 시 `bible` 테이블은 seed 쪽을 진실 원천으로 둔다
 
@@ -69,6 +69,7 @@
 
 | 날짜 | 내용 | PR |
 |---|---|---|
+| 2026-07-28 | 성경 본문을 원본(goodtv)과 동기화 — 5,538행 교정·누락 절 14행 추가·유령 행 50행 삭제, seed 재생성 | #44 |
 | 2026-07-27 | 공지 구조 정리 — `images`(URL 배열) + `body`(마크다운), `slides` 제거 및 데이터 이관 | #41 |
 | 2026-07-27 | 사용 로그(`llm_usage_log`·`share_reward_log`) 읽기 개방 — 어드민 집계용 | #40 |
 | 2026-07-27 | `is_admin` + `notice` 테이블, `is_admin` 자기부여 차단, 공지 노출 조건을 앱으로 이동 | #39 |
