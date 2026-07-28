@@ -32,6 +32,16 @@ staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 - [ ] `supabase/tests/*`(원본 대조·갱신 스크립트) 커밋 여부 결정 — 현재 로컬에만 있다. 이번 조사에 실제로 쓴 도구라 다음에도 필요할 가능성이 높다
 - [ ] **재발 방지**: seed 를 prod 덤프로 갱신할 때 원본 대조본을 덮지 않도록 주의. 다음 갱신 시 `bible` 테이블은 seed 쪽을 진실 원천으로 둔다
 
+### 개발용 계정·더미 데이터 — 계획 승인 대기
+계획: [dev-seed-plan.md](dev-seed-plan.md)
+
+로그인이 카카오 전용이라 로그인 뒤 화면을 도구가 열 수 없다(공지 스크린샷·UI 회귀 확인이 전부 사람 몫).
+로컬 이메일 로그인이 실제로 동작함을 확인했다 — 계정 생성·`profiles` 트리거·웹 세션 획득까지 성공.
+**seed 는 원격에 나가지 않으므로**(배포는 `db push` + `functions deploy` 뿐) 유출 위험은 없다.
+
+- [ ] `scripts/seed-dev.sh` + `supabase/dev/seed-dev.sql` — 계정 3개 + 그룹·기도카드 더미 데이터(멱등)
+- [ ] web 짝: `DevLoginPage` + `import.meta.env.DEV` 가드 라우트 (prod 번들에서 제외 확인이 검증 기준)
+
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
 `is_admin`과 같은 원인(컬럼을 제한하지 않는 UPDATE 정책)이며, 조치도 같다 — 컬럼 단위 UPDATE 권한 회수.
