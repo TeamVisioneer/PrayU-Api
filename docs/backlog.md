@@ -38,7 +38,11 @@
 - [ ] **`KAKAO_ADMIN_KEY` 시크릿 확인** — 각 환경 시크릿이 해당 카카오 앱 어드민 키와 일치하는지
 - [ ] **카카오 [플랫폼] > [Web] 사이트 도메인** — prod 앱에 서비스 도메인 등록 확인 (staging에서 4019 `domain mismatched`로 겪은 항목)
 - [ ] **prod 대시보드에서 `push` 함수 수동 삭제** — 코드에서는 제거됨(web#37 짝 작업)
-- [ ] **운영 관리자 계정에 `is_admin = true` 설정** — #39 배포 후
+- [ ] 🔴 **운영 관리자 계정에 `is_admin = true` 설정** — **prod release 직후 반드시.** 안 하면 `/admin`이 아무도 못 들어간다(이메일 하드코딩을 걷어내고 이 값만 본다). staging은 2026-07-27 처리 완료
+  ```sql
+  update public.profiles p set is_admin = true
+  from auth.users u where u.id = p.id and u.email = '<관리자 이메일>';
+  ```
 - [ ] **Supabase 커스텀 도메인 도입 여부 결정** (`staging-api.prayu.site` / `api.prayu.site`) — 유료 애드온 + CNAME/TXT + `supabase domains activate`. 도입 시 카카오 로그인 Redirect URI에 새 도메인 콜백 추가 필요
 
 ## 보안 (상세는 security-backlog.md)
