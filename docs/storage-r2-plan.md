@@ -79,7 +79,7 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
 
 ```
 기존:  image_url = "https://<ref>.supabase.co/storage/v1/object/public/prayu/BibleCard/a.jpeg"
-신규:  image_key = "bible_card/9f2c….jpeg"    + VITE_ASSET_BASE_URL (환경변수)
+신규:  image_key = "bible_card/9f2c….jpeg"    + VITE_STORAGE_BASE_URL (환경변수)
 ```
 
 도메인이 바뀌면 **환경변수 한 줄**만 고치면 된다. 공지 이미지에서 겪은
@@ -101,7 +101,7 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
 ```ts
 // src/lib/assetUrl.ts — 키만 받는다. URL 을 넘기는 경우는 없다.
 export const assetUrl = (key: string | null): string | null =>
-  key ? `${import.meta.env.VITE_ASSET_BASE_URL}/${key}` : null;
+  key ? `${import.meta.env.VITE_STORAGE_BASE_URL}/${key}` : null;
 
 // 읽는 곳
 const src = assetUrl(card.image_key) ?? card.image_url;
@@ -182,7 +182,7 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 | `src/pages/NewThanksCardPage.tsx` · `BibleCardPage/BibleCardNewPage.tsx` · `BibleCardGeneratorPage.tsx` (수정) | 저장 시 key 를 넣는다 |
 | `src/pages/AdminPage/NoticeManager.tsx` (수정) | 즉석 공지 이미지 업로드도 같은 경로로. **단 저장은 URL** — 아래 참조 |
 | 읽는 곳 (수정) | `PrayCardHistoryDrawer` · `PrayCardHistoryList` · `ThanksCardItem` — `assetUrl(image_key) ?? image_url` 로. **`UserProfile`·`PrayListDrawer`·`PrayCard` 는 손대지 않는다**(`avatar_url` 만 쓴다) |
-| `.env` (각 환경) | `VITE_ASSET_BASE_URL` |
+| `.env` (각 환경) | `VITE_STORAGE_BASE_URL` |
 
 **프로필 사진**: `avatar_url` 은 대부분 카카오가 준 외부 URL 이라 이번 범위 밖이다. 관련 컴포넌트는 건드리지 않는다.
 
@@ -197,9 +197,9 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 2. [x] **Api PR** — `image_key` 마이그레이션 + 서명 엔드포인트 — [#50](https://github.com/TeamVisioneer/PrayU-Api/pull/50)
 3. [x] **web PR** — `assetUrl()` + 업로드 전환 + 읽는 곳 정리 — [PrayU-Web#489](https://github.com/TeamVisioneer/PrayU-Web/pull/489)
 1. [ ] 🔴 **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**(브라우저 PUT 이므로 필수),
-   Api 시크릿 4개 + web `VITE_ASSET_BASE_URL`
+   Api 시크릿 4개 + web `VITE_STORAGE_BASE_URL`
 4. [ ] **검증** — 아래
-5. (나중에) 도메인을 옮기게 되면 `VITE_ASSET_BASE_URL` 만 바꾼다
+5. (나중에) 도메인을 옮기게 되면 `VITE_STORAGE_BASE_URL` 만 바꾼다
 
 **순서가 뒤집혔다.** 1단계(사람이 준비)를 기다리지 않고 코드를 먼저 넣었으므로,
 **설정이 없는 동안에는 기존 Supabase Storage 로 계속 업로드된다** (아래 "스위치" 절).
@@ -207,7 +207,7 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 
 ### 스위치 — 설정이 없으면 옛 경로로 간다
 
-`VITE_ASSET_BASE_URL` **하나로** 판단한다.
+`VITE_STORAGE_BASE_URL` **하나로** 판단한다.
 
 | 상태 | 업로드 | DB 에 들어가는 값 |
 |---|---|---|
