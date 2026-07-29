@@ -180,24 +180,66 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 | `src/apis/file.ts` (수정) | `uploadImage` 를 **서명 URL 방식**으로 교체. 반환값을 `{ key }` 로 바꾸고 `getPublicUrl` 은 제거(리졸버로 대체) |
 | `src/hooks/useSaveImage.ts` (수정) | 업로드 후 `key` 를 돌려주도록 |
 | `src/pages/NewThanksCardPage.tsx` · `BibleCardPage/BibleCardNewPage.tsx` · `BibleCardGeneratorPage.tsx` (수정) | 저장 시 key 를 넣는다 |
-| `src/pages/AdminPage/NoticeManager.tsx` (수정) | 즉석 공지 이미지 업로드도 같은 경로로 |
+| `src/pages/AdminPage/NoticeManager.tsx` (수정) | 즉석 공지 이미지 업로드도 같은 경로로. **단 저장은 URL** — 아래 참조 |
 | 읽는 곳 (수정) | `PrayCardHistoryDrawer` · `PrayCardHistoryList` · `ThanksCardItem` — `assetUrl(image_key) ?? image_url` 로. **`UserProfile`·`PrayListDrawer`·`PrayCard` 는 손대지 않는다**(`avatar_url` 만 쓴다) |
 | `.env` (각 환경) | `VITE_ASSET_BASE_URL` |
 
 **프로필 사진**: `avatar_url` 은 대부분 카카오가 준 외부 URL 이라 이번 범위 밖이다. 관련 컴포넌트는 건드리지 않는다.
 
+**공지 이미지는 예외로 URL 을 저장한다.** `notice.images` 는 설계상 URL 목록이고, 레포 원고가 넣는
+`/images/notice/...`(웹 오리진)과 즉석 업로드가 섞인다. 여기에 키를 넣으면 **값의 생김새로 분기**해야 하는데
+그건 이 계획이 피하려던 것이다. 공지는 행이 몇 개뿐이라 도메인이 바뀌어도 UPDATE 몇 줄이면 된다 —
+수만 행이 쌓이는 카드와 성격이 다르다.
+
 ## 단계
 
-0. **web PR — 업로드 전 리사이즈** (선행. R2 준비를 기다리지 않는다)
-1. **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**(브라우저 PUT 이므로 필수), 각 환경 시크릿 등록
-2. **Api PR** — `image_key` 마이그레이션 + 서명 엔드포인트 (merge 는 **Api 먼저 → web**)
-3. **web PR** — `assetUrl()` + 업로드 전환 + 읽는 곳 정리
-4. **검증** — 아래
+0. [x] **web PR — 업로드 전 리사이즈** — [PrayU-Web#488](https://github.com/TeamVisioneer/PrayU-Web/pull/488)
+2. [x] **Api PR** — `image_key` 마이그레이션 + 서명 엔드포인트 — [#50](https://github.com/TeamVisioneer/PrayU-Api/pull/50)
+3. [x] **web PR** — `assetUrl()` + 업로드 전환 + 읽는 곳 정리 — [PrayU-Web#489](https://github.com/TeamVisioneer/PrayU-Web/pull/489)
+1. [ ] 🔴 **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**(브라우저 PUT 이므로 필수),
+   Api 시크릿 4개 + web `VITE_ASSET_BASE_URL`
+4. [ ] **검증** — 아래
 5. (나중에) 도메인을 옮기게 되면 `VITE_ASSET_BASE_URL` 만 바꾼다
+
+**순서가 뒤집혔다.** 1단계(사람이 준비)를 기다리지 않고 코드를 먼저 넣었으므로,
+**설정이 없는 동안에는 기존 Supabase Storage 로 계속 업로드된다** (아래 "스위치" 절).
+설정을 넣는 순간 새 업로드부터 R2 로 간다 — 배포를 다시 하지 않아도 된다.
+
+### 스위치 — 설정이 없으면 옛 경로로 간다
+
+`VITE_ASSET_BASE_URL` **하나로** 판단한다.
+
+| 상태 | 업로드 | DB 에 들어가는 값 |
+|---|---|---|
+| 값 없음 (지금) | Supabase Storage (기존 경로 그대로) | `image_url` / `image` (절대 URL) |
+| 값 있음 | R2 (서명 URL) | `image_key` (경로) |
+
+읽는 쪽은 늘 `assetUrl(image_key) ?? image_url` 이라 두 상태가 섞여도 된다.
+전환을 되돌려야 하면 환경변수를 지우면 되고, 그동안 R2 에 올라간 파일은 계속 읽힌다.
+
+**한쪽만 넣으면 업로드가 실패한다** — web 에 base URL 만 있고 Api 에 R2 시크릿이 없으면
+서명 엔드포인트가 500 을 준다. 두 설정은 같이 넣는다.
 
 ## 검증
 
+### 로컬에서 이미 확인한 것 (2026-07-29)
+
+로컬 Supabase 에 **S3 호환 엔드포인트**가 있어 R2 자격증명 없이 전 구간을 돌려볼 수 있었다.
+`R2_ENDPOINT` 만 그쪽으로 돌리면 서명 규격이 같아 코드가 그대로 동작한다.
+
+| 확인 | 결과 |
+|---|---|
+| 브라우저에서 업로드 (서명 발급 → PUT → 공개 조회) | 200, 바이트·content-type 원본과 동일 |
+| 반환값 | `{ key: "thanks_card/<uuid>.jpeg", url: null }` — **키만** 돌아온다 |
+| `image_key` 만 있는 행 | 감사카드 목록·프로필 히스토리에서 정상 표시 |
+| `image_url` 만 있는 행(기존 데이터) | 그대로 표시 — 폴백 동작 |
+| 환경변수 없는 상태 | Supabase 로 업로드, `{ key: null, url: <절대 URL> }` — **기존 동작 유지** |
+| 엔드포인트 | 비로그인 401 · 잘못된 `kind` 400 · 허용 외 `contentType` 400 · 타입 변조 PUT 403 |
+
+### R2 연결 후 확인할 것
+
 - 말씀카드·감사카드·즉석 공지 이미지 업로드 → R2 에 객체 생성 확인, DB 에 **키만** 저장됐는지 확인
+- **CORS** — 브라우저 PUT 이라 버킷에 허용 오리진이 없으면 여기서 막힌다 (로컬 검증으로는 드러나지 않는 항목)
 - **기존 카드가 그대로 보이는지** — `image_key` 가 없는 행은 `image_url` 로 떨어져야 한다
 - 카카오 공유 썸네일이 새 URL 로 뜨는지
 - 비로그인 상태에서 서명 엔드포인트가 401 인지
