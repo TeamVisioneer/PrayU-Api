@@ -58,10 +58,12 @@ FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭
 Supabase Storage 무료 한도 1GB. 말씀카드 한 장 ≈ 52KB 라 **1GB ≈ 2만 장**으로 당장 급하지는 않지만,
 쌓인 뒤 옮기면 객체 복사 + DB URL 일괄 치환이 필요해 비싸진다. **신규 업로드만 R2 로** 돌려 그 비용을 없앤다.
 
-- [ ] **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**, 환경별 시크릿 등록
-      (`R2_ACCOUNT_ID` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` · `R2_BUCKET`)
-- [ ] **Api** — 서명 URL 발급 엔드포인트 (`POST /api/upload-url`). 경로를 클라이언트가 정하지 못하게 서버가 키를 만든다
-- [ ] web 짝 — 경로(key) 저장 + `assetUrl()` 리졸버, 업로드 전환
+- [x] ~~**0단계 · 업로드 전 리사이즈**~~ — [PrayU-Web#488](https://github.com/TeamVisioneer/PrayU-Web/pull/488). 폰 사진 6.75MB → 484KB
+- [x] ~~**Api** — `image_key` 마이그레이션 + 서명 URL 엔드포인트~~ — [#50](https://github.com/TeamVisioneer/PrayU-Api/pull/50)
+- [ ] 🔴 **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**,
+      환경별 시크릿 등록 (`R2_ENDPOINT` · `R2_BUCKET` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY`).
+      **이게 없으면 엔드포인트가 500 을 돌려준다** — 배포해도 web 전환 전까지는 아무도 호출하지 않으므로 순서는 자유다
+- [ ] web 짝 — 경로(key) 저장 + `assetUrl()`, 업로드 전환
 
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).

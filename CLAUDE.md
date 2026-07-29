@@ -43,6 +43,18 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 - 계정 삭제 경로는 만들지 않았다. **회원 탈퇴 자체가 FK 때문에 실패하는 문제**가 있다 → [docs/backlog.md](docs/backlog.md)
 - 상세: [docs/dev-seed-plan.md](docs/dev-seed-plan.md)
 
+## 시크릿
+
+각 환경(staging·prod)에 등록한다. 로컬은 `./.env`.
+
+| 이름 | 쓰는 곳 |
+|---|---|
+| `OPENAI_API_KEY` | bible·openai 함수 |
+| `KAKAO_ADMIN_KEY` | kakao-webhook |
+| `R2_ENDPOINT` · `R2_BUCKET` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` | 업로드 서명 (`POST /api/upload-url`) |
+
+R2 값이 없으면 업로드 엔드포인트가 500 을 돌려준다 — 설정 누락을 조용히 넘기지 않는다.
+
 ## 신규 엔드포인트 체크리스트
 
 함수는 전부 service role 클라이언트(RLS 우회)를 쓰므로 **함수 코드가 권한 검사의 전부**다. 라우트 추가 시:
