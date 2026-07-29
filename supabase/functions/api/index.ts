@@ -1,11 +1,13 @@
 import { Hono } from "https://deno.land/x/hono@v4.3.11/mod.ts";
 import userRouter from "./users/userRouter.ts";
 import churchRouter from "./churches/churchRouter.ts";
+import uploadRouter from "./upload/uploadRouter.ts";
 
 const app = new Hono();
 
 app.basePath("/api")
   .route("/users", userRouter)
-  .route("/churches", churchRouter);
+  .route("/churches", churchRouter)
+  .route("/upload-url", uploadRouter);
 
 Deno.serve(app.fetch);
