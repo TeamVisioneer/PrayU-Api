@@ -66,38 +66,24 @@ export class UserRepository {
   }
 
   /**
-   * 개인 식별정보를 지우고 탈퇴 표시를 남긴다.
+   * 탈퇴 표시를 남긴다.
    *
-   * GoTrue 소프트 삭제는 `auth.users` 만 익명화하고 `public.profiles` 는 건드리지 않는다 —
-   * 개인정보를 지우는 것은 여기서 해야 한다.
+   * **행의 다른 값은 건드리지 않는다.** 탈퇴 뒤에도 문의 대응·이상 행위 추적 같은 운영이
+   * 필요하고, 지워버리면 되돌릴 방법이 없다. 노출은 표시 계층이 `deleted_at` 을 보고 막는다.
    *
-   * 이름은 **비운다.** "(탈퇴유저)" 같은 표시 문자열을 데이터에 넣지 않는다 —
-   * 표시는 화면의 몫이고, 데이터에 넣으면 문구를 바꿀 때 DB 를 고쳐야 한다.
-   * web 은 `deleted_at` 을 보고 표시한다.
+   * 개인정보 **파기**는 이 단계의 책임이 아니다 — 나중에 돌릴 배치 하드 삭제가 진다
+   * (docs/account-deletion-plan.md "한계" 절).
+   *
+   * 참고: `fcm_token`·`push_notification` 은 함수 어디서도 읽지 않는다(푸시는 OneSignal 경로).
+   * 비워도 동작이 달라지지 않아 남겨 둔다.
    */
-  async anonymizeProfile(userId: string, deletedAt: string) {
+  async markProfileDeleted(userId: string, deletedAt: string) {
     const { error } = await supabase
       .from("profiles")
-      .update({
-        full_name: null,
-        avatar_url: null,
-        username: null,
-        website: null,
-        kakao_id: null,
-        // fcm_token 은 NOT NULL 이라 빈 문자열이 "없음"이다 (기본값도 '')
-        fcm_token: "",
-        push_notification: false,
-        kakao_notification: false,
-        blocking_users: [],
-        is_admin: false,
-        premium_expired_at: null,
-        // 기존 web 탈퇴 흐름이 지우던 값 — 서버가 절차를 가져오면서 함께 옮긴다
-        terms_agreed_at: null,
-        deleted_at: deletedAt,
-      })
+      .update({ deleted_at: deletedAt })
       .eq("id", userId);
 
-    if (error) throw new Error(`anonymizeProfile: ${error.message}`);
+    if (error) throw new Error(`markProfileDeleted: ${error.message}`);
   }
 
   /**

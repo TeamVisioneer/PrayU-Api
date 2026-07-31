@@ -4,8 +4,9 @@ import { UserRepository } from "./userRepository.ts";
  * 회원 탈퇴 — 소프트 삭제 (docs/account-deletion-plan.md).
  *
  * 하드 삭제는 `profiles_id_fkey`(NO ACTION) 때문에 **항상 실패**해 왔다.
- * 계정을 못 쓰게 만들고 개인 식별정보를 지우되, 함께 나눈 기도 기록은 남긴다 —
- * 지우면 **상대방 화면에서도 사라지기** 때문이다.
+ * 계정을 못 쓰게 만들고 탈퇴로 표시하되, **데이터는 지우지 않는다** —
+ * 기도 기록을 지우면 상대방 화면에서도 사라지고, 프로필을 지우면 운영 추적이 끊긴다.
+ * 개인정보 파기는 나중에 돌릴 **배치 하드 삭제**의 몫이다.
  *
  * 순서가 있는 다단계 절차라 리포지토리(데이터 조작)나 컨트롤러(권한 검사)가 아니라
  * 서비스에 둔다.
@@ -32,7 +33,7 @@ export class UserService {
 
     await this.handOverLedGroups(userId, deletedAt);
     await this.userRepository.leaveAllGroups(userId, deletedAt);
-    await this.userRepository.anonymizeProfile(userId, deletedAt);
+    await this.userRepository.markProfileDeleted(userId, deletedAt);
     await this.userRepository.softDeleteAuthUser(userId);
   }
 
