@@ -26,7 +26,7 @@
   - LLM 호출 전 insert(`feature: "qt"`, metadata `{}`) → 호출 후 토큰 update
 - `openaiController.getQTcontent`: `userId === "anon"` → 401 `LOGIN_REQUIRED`, 한도 초과 → 429 `DAILY_LIMIT_EXCEEDED`
 - 한도 env: `QT_DAILY_LIMIT` (기본값 10 — QT는 조회성이라 말씀카드보다 관대하게. **수치 확정 필요**)
-- `llm_usage_log.metadata` 키 규율 문서에 `qt: {}` 추가 (PrayU-web/docs/bible-card-finishing-plan.md 1장)
+- `llm_usage_log.metadata` 키 규율 문서에 `qt: {}` 추가 (PrayU-web/docs/archive/bible-card-finishing-plan.md 1장)
 
 ### 3. PrayU-web 짝 PR
 

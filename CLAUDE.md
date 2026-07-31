@@ -7,6 +7,7 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 - 🔴 **merge·main push 는 사용자가 그 메시지에서 시킬 때만.** 기본 범위는 브랜치 push + PR 생성까지다. 이전 메시지의 "머지해줘"는 그 PR 한정이며, 문서 전용 변경도 main 에 직접 커밋하지 않는다 (상세: `../CLAUDE.md`)
 - **문서 갱신은 그 작업 PR 에 함께 넣는다.** 백로그·계획서만 고치는 별도 PR 을 만들지 않는다 (상세: `../CLAUDE.md`)
 - **docs 먼저, 코드는 그 다음.** 피처/개선 작업 시작 시 코드부터 수정하지 않는다. 설계·계획 문서를 먼저 작성(또는 기존 문서 갱신)하고 방향 확인 후 구현한다. (웹 관련 문서는 `../PrayU-web/docs/` 참조)
+- **docs/ 구조**: `guides/`(절차·참조) · `plans/`(진행 중 계획) · `archive/`(구현 완료 — 갱신하지 않는다). 상세: `../CLAUDE.md`
 - **[docs/backlog.md](docs/backlog.md)가 이 레포 작업 목록의 원본이다.** 세션 시작 시 먼저 읽고, 작업 중 발견한 후속 이슈는 그 자리에서 여기에 추가한다 (대화·PR 코멘트로만 남기지 않는다). 프론트 항목은 `../PrayU-web/docs/backlog.md`.
 
 ## 스키마 설계 원칙 — 로직은 앱에, DB에는 권한과 데이터만
@@ -43,7 +44,7 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 - 로그인은 카카오·애플 전용이라 로컬에서는 web 의 `/dev/login`(개발 빌드 전용)으로 시드 계정에 들어간다
 - `supabase/dev/seed-dev.sql` 은 `db reset` 이 읽지 않는다 — 초기화 후에는 `seed-dev.sh` 를 다시 돌린다
 - 계정 삭제 경로는 만들지 않았다. **회원 탈퇴 자체가 FK 때문에 실패하는 문제**가 있다 → [docs/backlog.md](docs/backlog.md)
-- 상세: [docs/dev-seed-plan.md](docs/dev-seed-plan.md)
+- 상세: [docs/guides/dev-seed-plan.md](docs/guides/dev-seed-plan.md)
 
 ## 시크릿
 

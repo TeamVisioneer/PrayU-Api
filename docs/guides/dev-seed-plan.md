@@ -71,9 +71,9 @@
 시드 계정을 지우려다 발견한 것: `auth.users` 하드 삭제는 `profiles_id_fkey`(NO ACTION)에 막혀 실패한다.
 따라서 **seed 스크립트에 계정 삭제 경로를 만들지 않는다** — 초기화는 `supabase db reset` 이 담당한다.
 
-이건 시드만의 문제가 아니라 **회원 탈퇴 기능 자체가 같은 벽에 막혀 있다**는 뜻이다. 별도 항목으로 [backlog.md](backlog.md) 에 올렸다.
+이건 시드만의 문제가 아니라 **회원 탈퇴 기능 자체가 같은 벽에 막혀 있다**는 뜻이다. 별도 항목으로 [backlog.md](../backlog.md) 에 올렸다.
 
 ## 후속
 
 - 시드 데이터의 폭을 어디까지 넓힐지는 필요할 때 늘린다(감사카드·알림·프리미엄 상태 등). 처음부터 다 만들지 않는다
-- 이 계획은 [PrayU-web/docs/notice-authoring-plan.md](../../PrayU-web/docs/notice-authoring-plan.md)의 "캡처" 단계를 실행 가능하게 만드는 전제다
+- 이 계획은 [PrayU-web/docs/notice-authoring-plan.md](../../../PrayU-web/docs/guides/notice-authoring-plan.md)의 "캡처" 단계를 실행 가능하게 만드는 전제다

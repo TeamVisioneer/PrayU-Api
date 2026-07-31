@@ -1,7 +1,7 @@
 import { UserRepository } from "./userRepository.ts";
 
 /**
- * 회원 탈퇴 — 소프트 삭제 (docs/account-deletion-plan.md).
+ * 회원 탈퇴 — 소프트 삭제 (docs/archive/account-deletion-plan.md).
  *
  * 하드 삭제는 `profiles_id_fkey`(NO ACTION) 때문에 **항상 실패**해 왔다.
  * 계정을 못 쓰게 만들고 탈퇴로 표시하되, **데이터는 지우지 않는다** —
