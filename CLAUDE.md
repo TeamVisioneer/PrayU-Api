@@ -27,12 +27,9 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 | `handle_new_user()` + `auth.users`의 `on_auth_user_created` 트리거 | 가입 시 `profiles` 행 생성 (`full_name`/`avatar_url`을 `raw_user_meta_data`에서 복사) | `auth.users` INSERT는 GoTrue 내부에서 일어나 앱이 개입할 지점이 없다 |
 | `update_avatar_url_to_https()` + `profiles`의 `avatar_url_https_trigger` | `avatar_url`이 `http://`면 `https://`로 치환 | 데이터 정규화. 카카오가 http URL을 주던 시절의 방어이며, 앱 여러 경로(가입·프로필 수정)에 흩어 넣는 것보다 한 곳이 안전 |
 | `rls_auto_enable` 이벤트 트리거 | 새 테이블 생성 시 RLS 자동 활성화 | 실수 방지 가드. 마이그레이션 작성자가 RLS를 잊어도 기본이 잠긴 상태가 된다 |
-| `profiles`의 컬럼 단위 UPDATE 권한 (`is_admin` 제외) | 사용자가 자기 `is_admin`을 켜는 **권한 상승** 차단 | RLS 정책은 "행"만 가리고 컬럼을 못 가린다. 앱에서 막으면 클라이언트가 직접 PostgREST를 호출해 우회 가능 — **앱에서는 구조적으로 불가능한 방어** |
+| `profiles`의 컬럼 단위 UPDATE 권한 (`is_admin`·`premium_expired_at` 제외) | 자기 `is_admin`(권한 상승)·`premium_expired_at`(프리미엄 무료 취득) 설정 차단. 어드민의 프리미엄 쓰기는 `POST /api/admin/premium` 으로 | RLS 정책은 "행"만 가리고 컬럼을 못 가린다. 앱에서 막으면 클라이언트가 직접 PostgREST를 호출해 우회 가능 — **앱에서는 구조적으로 불가능한 방어** |
 | RLS 정책 전반 | 행 가시성·쓰기 권한 | 권한이지 비즈니스 로직이 아니다. 단, 조건에 상태·기간 같은 규칙이 섞이면 앱으로 옮긴다 |
 | prod `cron.job` (오늘의 기도 리마인더) | 스케줄에 맞춰 edge function 호출 | 스케줄러. 로직은 호출되는 함수(TS)에 있다 |
-
-**예정**: `premium_expired_at`도 같은 이유(권한 상승·매출 직결)로 컬럼 권한 회수 예정 —
-어드민 쓰기를 `admin` edge function으로 옮긴 뒤. 상세: `docs/backlog.md`
 
 ## 로컬 개발 데이터
 
