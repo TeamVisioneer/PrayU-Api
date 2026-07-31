@@ -66,6 +66,8 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
   (*"you will not be able to access Vercel Blob if limits are exceeded"*). 사용자 업로드가 멈춘다는 뜻이라
   무료 플랜으로는 위험하다. 커스텀 도메인도 지원하지 않는다. Pro 로 올린다면 다시 볼 만하다
 - **R2 + `file.prayu.site`** — R2 커스텀 도메인은 **해당 도메인이 같은 Cloudflare 계정의 zone** 이어야 한다.
+  DNS 를 Vercel 에 두고 zone 만 등록하는 partial(CNAME) setup 은 **Business 플랜 이상**,
+  하위 도메인만 위임하는 subdomain setup 은 **Enterprise 전용** (2026-07 Cloudflare 문서 확인).
   서브도메인만 위임하는 partial(CNAME) setup 은 **Business/Enterprise 전용**이라 무료로는 불가능하다.
   prayu.site 를 통째로 옮기는 선택지는 DNS 통합 관리 방침과 어긋나 접었다
 
@@ -79,7 +81,7 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
 
 ```
 기존:  image_url = "https://<ref>.supabase.co/storage/v1/object/public/prayu/BibleCard/a.jpeg"
-신규:  image_key = "bible_card/9f2c….jpeg"    + VITE_ASSET_BASE_URL (환경변수)
+신규:  image_key = "bible_card/9f2c….jpeg"    + VITE_STORAGE_BASE_URL (환경변수)
 ```
 
 도메인이 바뀌면 **환경변수 한 줄**만 고치면 된다. 공지 이미지에서 겪은
@@ -101,7 +103,7 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
 ```ts
 // src/lib/assetUrl.ts — 키만 받는다. URL 을 넘기는 경우는 없다.
 export const assetUrl = (key: string | null): string | null =>
-  key ? `${import.meta.env.VITE_ASSET_BASE_URL}/${key}` : null;
+  key ? `${import.meta.env.VITE_STORAGE_BASE_URL}/${key}` : null;
 
 // 읽는 곳
 const src = assetUrl(card.image_key) ?? card.image_url;
@@ -182,7 +184,7 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 | `src/pages/NewThanksCardPage.tsx` · `BibleCardPage/BibleCardNewPage.tsx` · `BibleCardGeneratorPage.tsx` (수정) | 저장 시 key 를 넣는다 |
 | `src/pages/AdminPage/NoticeManager.tsx` (수정) | 즉석 공지 이미지 업로드도 같은 경로로. **단 저장은 URL** — 아래 참조 |
 | 읽는 곳 (수정) | `PrayCardHistoryDrawer` · `PrayCardHistoryList` · `ThanksCardItem` — `assetUrl(image_key) ?? image_url` 로. **`UserProfile`·`PrayListDrawer`·`PrayCard` 는 손대지 않는다**(`avatar_url` 만 쓴다) |
-| `.env` (각 환경) | `VITE_ASSET_BASE_URL` |
+| `.env` (각 환경) | `VITE_STORAGE_BASE_URL` |
 
 **프로필 사진**: `avatar_url` 은 대부분 카카오가 준 외부 URL 이라 이번 범위 밖이다. 관련 컴포넌트는 건드리지 않는다.
 
@@ -197,9 +199,9 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 2. [x] **Api PR** — `image_key` 마이그레이션 + 서명 엔드포인트 — [#50](https://github.com/TeamVisioneer/PrayU-Api/pull/50)
 3. [x] **web PR** — `assetUrl()` + 업로드 전환 + 읽는 곳 정리 — [PrayU-Web#489](https://github.com/TeamVisioneer/PrayU-Web/pull/489)
 1. [ ] 🔴 **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**(브라우저 PUT 이므로 필수),
-   Api 시크릿 4개 + web `VITE_ASSET_BASE_URL`
+   Api 시크릿 4개 + web `VITE_STORAGE_BASE_URL`
 4. [ ] **검증** — 아래
-5. (나중에) 도메인을 옮기게 되면 `VITE_ASSET_BASE_URL` 만 바꾼다
+5. (나중에) 도메인을 옮기게 되면 `VITE_STORAGE_BASE_URL` 만 바꾼다
 
 **순서가 뒤집혔다.** 1단계(사람이 준비)를 기다리지 않고 코드를 먼저 넣었으므로,
 **설정이 없는 동안에는 기존 Supabase Storage 로 계속 업로드된다** (아래 "스위치" 절).
@@ -207,7 +209,7 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 
 ### 스위치 — 설정이 없으면 옛 경로로 간다
 
-`VITE_ASSET_BASE_URL` **하나로** 판단한다.
+`VITE_STORAGE_BASE_URL` **하나로** 판단한다.
 
 | 상태 | 업로드 | DB 에 들어가는 값 |
 |---|---|---|
@@ -239,7 +241,11 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 ### R2 연결 후 확인할 것
 
 - 말씀카드·감사카드·즉석 공지 이미지 업로드 → R2 에 객체 생성 확인, DB 에 **키만** 저장됐는지 확인
-- **CORS** — 브라우저 PUT 이라 버킷에 허용 오리진이 없으면 여기서 막힌다 (로컬 검증으로는 드러나지 않는 항목)
+- **CORS** — 브라우저 PUT 이라 버킷에 허용 오리진이 없으면 여기서 막힌다 (로컬 검증으로는 드러나지 않는 항목).
+  실제 오리진은 staging `https://staging.prayu.site`, prod `https://prayu.site` + `https://www.prayu.site`
+  (+ 로컬 `http://localhost:5173`). `prayu-staging.vercel.app` 이 아니다 — 처음에 이걸로 잘못 적었다
+- `<img>` 로 보여주는 건 CORS 를 타지 않지만 **`fetch()` 로 읽으면 GET 도 CORS 를 탄다.**
+  지금은 전부 `<img>` 라 `PUT` 만 열어두면 되고, 캔버스 합성 등으로 이미지를 `fetch` 하게 되면 `GET` 을 추가한다
 - **기존 카드가 그대로 보이는지** — `image_key` 가 없는 행은 `image_url` 로 떨어져야 한다
 - 카카오 공유 썸네일이 새 URL 로 뜨는지
 - 비로그인 상태에서 서명 엔드포인트가 401 인지

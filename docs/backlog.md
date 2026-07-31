@@ -71,6 +71,20 @@ Supabase Storage 무료 한도 1GB. 말씀카드 한 장 ≈ 52KB 라 **1GB ≈ 
 지금 못 막는 이유: 어드민 화면이 **클라이언트에서 직접** 이 컬럼에 쓴다 → 잠그면 어드민 기능이 먼저 깨진다.
 → PR C(admin edge function)를 폐기했으므로, 막기로 하면 **어드민 프리미엄 설정만을 위한 최소 서버 경로**를 따로 만들고 컬럼 권한을 회수한다. 상세: [security-backlog.md](../../PrayU-web/docs/security-backlog.md) 8번
 
+### 함수 시크릿을 CI 로 주입 — 검토
+지금 Edge Function 시크릿(`OPENAI_SECRET_KEY`·`KAKAO_ADMIN_KEY`·`R2_*` 등)은 **대시보드에 사람이 손으로** 넣는다.
+staging/prod 에 뭔가 반영되는 경로 중 **유일하게 CI 를 안 거치는 예외**이고, 그래서 두 문제가 있다 —
+레포만 봐서는 어떤 시크릿이 필요한지 알 수 없고(코드의 `Deno.env.get` 을 다 찾아야 한다),
+staging 에 넣고 prod 에 빠뜨리면 **release 후 500 이 날 때** 알게 된다.
+
+배포 워크플로에 `supabase secrets set --project-ref $PROJECT_ID --env-file` 단계를 넣으면
+**이름은 git(워크플로 파일)에, 값은 GitHub Secrets 에** 남고 두 환경이 같은 목록을 갖는다.
+
+- [ ] **선행 확인**: `supabase secrets set` 이 지정한 것만 갱신하는지, 나머지를 지우는지 staging 에서 실증.
+      지운다면 워크플로에 **모든** 시크릿을 나열해야 한다 (누락 시 기존 시크릿이 날아간다)
+- [ ] 배포 워크플로 수정이라 **사람 확인 후 진행**. 시크릿 보관처가 하나 늘어나는 대가(로테이션 시 GitHub 도 갱신)를 감수할지 판단 필요
+- 판단 보류 근거: 시크릿이 4~6개 수준이면 사람이 관리 가능한 규모다. 개수가 늘거나 환경이 추가되면 그때 한다
+
 ### 기타
 - [ ] QT 응답 토큰을 `llm_usage_log`에 기록 (현재 호출 수만 차감)
 - [ ] `deno.lock` 커밋 여부 결정
