@@ -1,0 +1,134 @@
+# 회원 탈퇴 — 소프트 삭제 전환 계획
+
+## 문제
+
+`api/users` 의 `deleteUser()` 는 `supabase.auth.admin.deleteUser(userId)`(하드 삭제)만 호출한다.
+`profiles_id_fkey` 가 **NO ACTION** 이라 `profiles` 행이 있는 한 **항상 실패**하고, 모든 사용자에게 `profiles` 행이 있다.
+
+```
+23503: update or delete on table "users" violates foreign key constraint "profiles_id_fkey"
+```
+
+그런데 web(`SettingDialog`)은 **반환값을 확인하지 않고** 바로 로그아웃·홈 이동한다.
+
+```ts
+await deleteUser(userId);   // 실패해도 그냥 진행
+signOut();
+```
+
+→ **사용자는 탈퇴됐다고 믿지만 계정과 데이터가 그대로 남아 있다.** 다시 로그인하면 복구된다.
+안내 문구는 "PrayU 의 모든 데이터가 삭제됩니다" 라고 약속하고 있다.
+
+## 결정 (2026-07-31)
+
+| 항목 | 결정 |
+|---|---|
+| 방식 | **소프트 삭제** — 계정을 못 쓰게 만들고 **개인 식별정보를 지운다**. 기도 기록은 남긴다 |
+| 그룹장 | **다른 멤버에게 이양** |
+| 완전 삭제 | 이번 범위 밖. 나중에 **배치로 하드 삭제**를 돌린다 |
+
+기도 기록을 지우면 **함께 기도한 사람들의 화면에서도 사라진다.** 남을 위해 기도한 흔적이
+상대 쪽에서 통째로 없어지는 것은 서비스 성격상 손실이 크다고 봤다.
+
+## GoTrue 소프트 삭제가 실제로 하는 일 — 로컬 실측
+
+`DELETE /auth/v1/admin/users/{id}` + `{"should_soft_delete": true}` 를 로컬 계정에 실행한 결과다.
+추측이 아니라 **실행 후 DB 를 직접 대조**했다.
+
+| 대상 | 결과 |
+|---|---|
+| 호출 자체 | **200** — `profiles` FK 가 있어도 실패하지 않는다 (하드 삭제와 결정적 차이) |
+| `auth.users.email` | **익명화** (임의 해시 문자열로 치환) |
+| `auth.users.deleted_at` | 설정됨 |
+| `encrypted_password` | **NULL** |
+| `raw_user_meta_data` | 비워짐 (`full_name` 사라짐) |
+| `auth.identities` | 행은 남지만 **`provider_id` 익명화 · `identity_data` 를 `{}` 로** |
+| `auth.sessions` | **0건** (전부 정리) |
+| 재로그인 | **실패** (`invalid_credentials`) |
+| `public.profiles` | **그대로.** `full_name`·`avatar_url` 남아 있다 |
+| `pray_card` 등 콘텐츠 | 그대로 |
+
+두 가지가 중요하다.
+
+1. **identity 가 익명화되므로 카카오로 다시 로그인해도 같은 계정으로 못 돌아온다** — 새 계정이 생긴다.
+   소프트 삭제가 "계정을 못 쓰게 만든다"는 요건을 실제로 충족한다.
+2. **GoTrue 는 `public.profiles` 를 건드리지 않는다.** 개인정보 삭제는 **우리가 해야 한다.**
+
+## 설계
+
+### 순서 — 앱 데이터 먼저, auth 는 마지막
+
+```
+1. 그룹장인 그룹 → 이양
+2. 모든 그룹에서 나가기 (member.deleted_at)
+3. profiles 개인정보 삭제 + deleted_at
+4. auth 소프트 삭제  ← 마지막
+```
+
+**auth 를 마지막에 두는 이유**: 여기서 세션이 끊긴다. 먼저 하면 이후 단계가 실패했을 때
+사용자는 로그인도 못 하는데 개인정보는 남은 상태가 되고, 스스로 재시도할 방법이 없다.
+반대 순서면 실패해도 개인정보는 이미 지워졌고 사용자가 다시 시도할 수 있다.
+
+**각 단계는 재실행 안전해야 한다** — 중간 실패 후 다시 눌렀을 때 정상 완료되도록.
+
+### 그룹장 이양 규칙
+
+`group.user_id` 가 그룹장이다.
+
+- 탈퇴자가 그룹장인 그룹마다, 남은 멤버(`deleted_at is null`) 중 **가장 먼저 들어온 사람**(`member.created_at` 최소)에게 이양
+- 남은 멤버가 없으면 **그룹을 소프트 삭제**(`group.deleted_at`)
+- 이양 사실을 새 그룹장에게 알릴지는 이번 범위 밖 (알림 설계가 별도로 필요)
+
+### `profiles` 에서 지울 것
+
+| 컬럼 | 처리 | 이유 |
+|---|---|---|
+| `full_name` | `'(탈퇴한 사용자)'` | 이름 자리를 비우면 화면이 깨진다. 표시 문자열로 대체 |
+| `avatar_url` · `username` · `website` | `null` | 개인 식별정보 |
+| `kakao_id` | `null` | 외부 식별자 |
+| `fcm_token` · `push_notification` | `null` / `false` | **탈퇴자에게 푸시가 가지 않게** |
+| `blocking_users` | `[]` | 관계 정보 |
+| `is_admin` | `false` | 권한 회수 |
+| `premium_expired_at` | `null` | 재가입은 새 계정이므로 승계 대상이 아니다 |
+| `deleted_at` | 지금 시각 | **신규 컬럼** |
+
+`deleted_at` 이 필요한 이유는 세 가지다 — 나중에 **배치 하드 삭제의 대상 선별**,
+재가입 계정과의 구분, 알림·집계에서 제외.
+
+## 파일 매니페스트
+
+### PrayU-Api
+
+| 파일 | 내용 |
+|---|---|
+| `supabase/migrations/<ts>_add_profiles_deleted_at.sql` (신규) | `profiles.deleted_at timestamptz` (널 허용). 배치 조회용 부분 인덱스 |
+| `supabase/functions/api/users/userService.ts` (신규) | 탈퇴 절차 오케스트레이션. `softDeleteUser(userId)` — 위 4단계를 순서대로 수행하고 단계별 실패를 구분해 돌려준다 |
+| `supabase/functions/api/users/userRepository.ts` (수정) | 데이터 조작만 담당: `transferGroupLeadership` · `leaveAllGroups` · `anonymizeProfile` · `softDeleteAuthUser`. 기존 `deleteUser`(하드) 제거 |
+| `supabase/functions/api/users/userController.ts` (수정) | 서비스 호출로 교체, 실패 시 상태코드 구분 |
+
+**새 파일을 만드는 이유**: 탈퇴는 순서가 있는 다단계 절차이고 중간 실패 처리가 필요하다.
+리포지토리(데이터 조작)에 두면 도메인 순서 규칙이 데이터 계층에 섞이고,
+컨트롤러에 두면 권한 검사와 도메인 로직이 한 함수에 뭉친다. `bible` 함수가 이미 같은 구조다.
+
+### PrayU-web
+
+| 파일 | 내용 |
+|---|---|
+| `src/components/profile/SettingDialog.tsx` (수정) | `deleteUser` **반환값 확인** — 실패하면 로그아웃하지 않고 안내한다. 지금은 실패해도 성공처럼 보인다 |
+| 안내 문구 (수정 제안) | "모든 데이터가 삭제됩니다" 는 소프트 삭제 후 **사실이 아니다.** 문구 확정은 사람 판단 필요 |
+
+## 검증
+
+- 로컬 시드 계정으로 탈퇴 → `profiles` 에 개인정보 없음·`deleted_at` 설정, `auth.users` 익명화, 재로그인 실패
+- 그룹장 계정으로 탈퇴 → 남은 멤버 중 가장 오래된 사람이 새 그룹장, 멤버가 없으면 그룹 소프트 삭제
+- **다른 사람 화면 회귀** — 탈퇴자가 쓴 기도카드·기도 기록이 그대로 보이고 이름이 `(탈퇴한 사용자)` 로 뜨는지, 아바타 없는 상태에서 레이아웃이 깨지지 않는지
+- 중간 실패 재시도 — 두 번 눌러도 정상 완료되는지
+- 탈퇴자에게 푸시가 가지 않는지
+
+## 한계 — 이번에 하지 않는 것
+
+- **기도제목 본문은 남는다.** 소프트 삭제의 본질적 한계이며, 개인정보 관점에서 완전한 답은 아니다.
+  완전 삭제는 **배치 하드 삭제**로 별도 대응한다 (`deleted_at` 기준 선별)
+- 배치 하드 삭제 자체 — FK NO ACTION 을 어떻게 풀지(CASCADE 전환 vs 순차 삭제) 별도 판단
+- 이양 알림 — 새 그룹장에게 알리는 흐름
+- 이미 탈퇴를 시도했던 사용자(하드 삭제 실패로 계정이 남은 사람) 정리
