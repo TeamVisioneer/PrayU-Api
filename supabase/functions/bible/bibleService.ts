@@ -11,7 +11,7 @@ import { LlmUsageRepository } from "../_shared/llmUsageRepository.ts";
 import { ShareRewardRepository } from "../_shared/shareRewardRepository.ts";
 
 // 말씀카드 일일 생성 한도 — bible_card 피처의 정책이므로 이 파일에 둔다 (서버가 진실, web 상수는 표시용)
-// 실제 한도 = 기본값 + 당일 공유 보상 수 (docs: PrayU-web/docs/share-reward-plan.md)
+// 실제 한도 = 기본값 + 당일 공유 보상 수 (docs: PrayU-web/docs/archive/share-reward-plan.md)
 const DAILY_LIMIT = Number(Deno.env.get("BIBLE_CARD_DAILY_LIMIT") ?? "3");
 
 export class DailyLimitExceededError extends Error {

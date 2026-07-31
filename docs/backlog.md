@@ -4,7 +4,7 @@
 세션 기록은 휘발되므로 **여기에 없으면 없는 것**이다.
 
 관련 백로그: [PrayU-web/docs/backlog.md](../../PrayU-web/docs/backlog.md) · `PrayU-App/docs/backlog.md`
-보안 상세: [PrayU-web/docs/security-backlog.md](../../PrayU-web/docs/security-backlog.md) · 운영 설정 대장: [supabase-migration-plan.md](../../PrayU-web/docs/supabase-migration-plan.md)
+보안 상세: [PrayU-web/docs/security-backlog.md](../../PrayU-web/docs/security-backlog.md) · 운영 설정 대장: [supabase-migration-plan.md](../../PrayU-web/docs/guides/supabase-migration-plan.md)
 
 > **기록 규칙**: 작업 중 후속 이슈를 발견하면 그 자리에서 여기에 추가한다(PR 코멘트로만 남기지 않는다).
 > 상세 설계는 별도 `docs/*-plan.md`로 만들고 여기서는 한 줄 + 링크. 완료 시 삭제하지 말고 "완료"로 옮긴다.
@@ -13,7 +13,7 @@
 
 ## 진행 중 — 어드민 개편
 
-계획: [PrayU-web/docs/admin-revamp-plan.md](../../PrayU-web/docs/admin-revamp-plan.md) (4개 PR, merge는 **Api 먼저 → web**)
+계획: [PrayU-web/docs/admin-revamp-plan.md](../../PrayU-web/docs/archive/admin-revamp-plan.md) (4개 PR, merge는 **Api 먼저 → web**)
 
 **어드민 개편 Api 작업은 모두 merge 완료** (#39 · #40 · #41 — 아래 "완료" 절 참조).
 - [x] ~~**PR C** `admin` edge function~~ — **폐기**. 대시보드가 읽을 테이블(`profiles`/`group`/`member`/`pray`/`pray_card`)이 이미 `select using(true)`라 함수를 세워도 실질 보호가 0이고 배포 대상만 늘어난다. 대신 사용 로그 읽기만 개방 → [#40](https://github.com/TeamVisioneer/PrayU-Api/pull/40)
@@ -22,7 +22,7 @@
 ## 다음 작업
 
 ### 성경 본문 원본 동기화 — staging 반영 완료, prod 대기
-[#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) merged (2026-07-28) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) merged · 상세: [bible-sync-plan.md](bible-sync-plan.md)
+[#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) merged (2026-07-28) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) merged · 상세: [bible-sync-plan.md](archive/bible-sync-plan.md)
 
 **staging DB 반영 확인** (2026-07-28): 31,138 → **31,102행** · 신 15:5 등 누락 절 복구 · `paragraph=0` **0행**.
 staging web 번들에 표시 정리(`/○/g`) 포함 확인.
@@ -36,7 +36,7 @@ staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 - [ ] `supabase/tests/*`(원본 대조·갱신 스크립트) 커밋 여부 결정 — 현재 로컬에만 있다. 이번 조사에 실제로 쓴 도구라 다음에도 필요할 가능성이 높다
 - [ ] **재발 방지**: seed 를 prod 덤프로 갱신할 때 원본 대조본을 덮지 않도록 주의. 다음 갱신 시 `bible` 테이블은 seed 쪽을 진실 원천으로 둔다
 
-### 🔴 회원 탈퇴가 실제로 삭제되지 않는다 — 로컬 실증
+### 회원 탈퇴 — 소프트 삭제 전환 완료 (2026-07-31), 후속 대기
 
 개발 계정 실험 중 발견. `api/users` 의 `deleteUser()` 는 `supabase.auth.admin.deleteUser(userId)`(하드 삭제)만 호출하는데,
 `profiles_id_fkey` 가 **NO ACTION** 이라 `profiles` 행이 있는 한 **항상 실패**한다. 모든 사용자에게 `profiles` 행이 있다.
@@ -53,19 +53,20 @@ staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭제(`should_soft_delete`)로 갈지 —
 그룹장이 탈퇴하면 그룹은 어떻게 되는지 같은 도메인 판단이 함께 필요하다.
 
-**결정 (2026-07-31): 소프트 삭제.** 계정을 못 쓰게 만들고 개인 식별정보를 지우되 기도 기록은 남긴다 —
-지우면 **함께 기도한 상대방 화면에서도 사라진다.** 그룹장은 **다른 멤버에게 이양**한다.
-완전 삭제는 나중에 **배치 하드 삭제**로 대응한다. 상세: [account-deletion-plan.md](account-deletion-plan.md)
+**결정 (2026-07-31): 소프트 삭제.** 계정을 못 쓰게 만들고 **탈퇴로 표시**하되 데이터는 지우지 않는다 —
+기도 기록을 지우면 함께 기도한 상대방 화면에서도 사라지고, 프로필을 지우면 운영 추적이 끊긴다.
+노출은 web 표시 계층이 `deleted_at` 을 보고 막는다. 그룹장은 **다른 멤버에게 이양**한다.
+완전 삭제는 나중에 **배치 하드 삭제**로 대응한다. 상세: [account-deletion-plan.md](archive/account-deletion-plan.md)
 
 - [x] ~~Api — `profiles.deleted_at` 마이그레이션 + 소프트 삭제 절차~~ — [#56](https://github.com/TeamVisioneer/PrayU-Api/pull/56)
-- [ ] web 짝: 탈퇴 실패를 사용자에게 알리고, `deleted_at` 인 프로필은 **"(탈퇴유저)"** 로 표시
+- [x] ~~web 짝: 탈퇴 실패 알림 + `deleted_at` 프로필 "(탈퇴유저)"·기본 아바타 표시~~ — [PrayU-Web#494](https://github.com/TeamVisioneer/PrayU-Web/pull/494)
 - [ ] **배치 하드 삭제** — `deleted_at` 기준 선별. FK NO ACTION 을 어떻게 풀지(CASCADE 전환 vs 순차 삭제) 판단 필요.
       기도제목 본문이 남는 것은 소프트 삭제의 본질적 한계라 여기서 해소한다
 - [ ] **이미 탈퇴를 시도했던 사용자 정리** — 하드 삭제 실패로 계정이 그대로 남은 사람들. prod 에 몇 명인지 확인 필요
 - [ ] 이양 알림 — 새 그룹장에게 알리는 흐름 (알림 설계가 따로 필요해 이번 범위 밖)
 
 ### 파일 스토리지 R2 이전 — 완료 (prod 는 release 시 반영)
-계획: [storage-r2-plan.md](storage-r2-plan.md) · 짝 작업: `../PrayU-web/docs/backlog.md`
+계획: [storage-r2-plan.md](archive/storage-r2-plan.md) · 짝 작업: `../PrayU-web/docs/backlog.md`
 
 Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전 비용을 없앤다.
 
