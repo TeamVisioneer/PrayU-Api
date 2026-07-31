@@ -74,7 +74,7 @@ export class UserRepository {
    * 개인정보 **파기**는 이 단계의 책임이 아니다 — 나중에 돌릴 배치 하드 삭제가 진다
    * (docs/archive/account-deletion-plan.md "한계" 절).
    *
-   * 참고: `fcm_token`·`push_notification` 은 함수 어디서도 읽지 않는다(푸시는 OneSignal 경로).
+   * 참고: `push_notification` 은 함수 어디서도 읽지 않는다(푸시는 OneSignal 경로).
    * 비워도 동작이 달라지지 않아 남겨 둔다.
    */
   async markProfileDeleted(userId: string, deletedAt: string) {

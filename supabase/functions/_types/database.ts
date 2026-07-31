@@ -528,7 +528,7 @@ export type Database = {
           avatar_url: string | null
           blocking_users: string[]
           created_at: string
-          fcm_token: string
+          deleted_at: string | null
           full_name: string | null
           id: string
           is_admin: boolean
@@ -546,7 +546,7 @@ export type Database = {
           avatar_url?: string | null
           blocking_users?: string[]
           created_at?: string
-          fcm_token?: string
+          deleted_at?: string | null
           full_name?: string | null
           id: string
           is_admin?: boolean
@@ -564,7 +564,7 @@ export type Database = {
           avatar_url?: string | null
           blocking_users?: string[]
           created_at?: string
-          fcm_token?: string
+          deleted_at?: string | null
           full_name?: string | null
           id?: string
           is_admin?: boolean
