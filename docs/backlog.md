@@ -56,18 +56,18 @@ FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭
 - [ ] 조치 방향 결정 후 수정 (인증·권한 로직이라 **사람 확인 후 진행**)
 - [ ] web 짝: 탈퇴 실패를 사용자에게 알리도록 `SettingDialog` 반환값 처리
 
-### 파일 스토리지 R2 이전 — 계획 승인 대기
+### 파일 스토리지 R2 이전 — 코드 완료, staging 전환만 남음
 계획: [storage-r2-plan.md](storage-r2-plan.md) · 짝 작업: `../PrayU-web/docs/backlog.md`
 
-Supabase Storage 무료 한도 1GB. 말씀카드 한 장 ≈ 52KB 라 **1GB ≈ 2만 장**으로 당장 급하지는 않지만,
-쌓인 뒤 옮기면 객체 복사 + DB URL 일괄 치환이 필요해 비싸진다. **신규 업로드만 R2 로** 돌려 그 비용을 없앤다.
+Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전 비용을 없앤다.
 
-- [x] ~~**0단계 · 업로드 전 리사이즈**~~ — [PrayU-Web#488](https://github.com/TeamVisioneer/PrayU-Web/pull/488). 폰 사진 6.75MB → 484KB
+- [x] ~~0단계 · 업로드 전 리사이즈~~ — [PrayU-Web#488](https://github.com/TeamVisioneer/PrayU-Web/pull/488). 폰 사진 6.75MB → 484KB
 - [x] ~~**Api** — `image_key` 마이그레이션 + 서명 URL 엔드포인트~~ — [#50](https://github.com/TeamVisioneer/PrayU-Api/pull/50)
-- [ ] 🔴 **사람이 준비** — R2 버킷 2개(staging/prod), API 토큰, `r2.dev` 공개 설정, **CORS 허용**,
-      환경별 시크릿 등록 (`R2_ENDPOINT` · `R2_BUCKET` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY`).
-      **이게 없으면 엔드포인트가 500 을 돌려준다** — 배포해도 web 전환 전까지는 아무도 호출하지 않으므로 순서는 자유다
-- [ ] web 짝 — 경로(key) 저장 + `assetUrl()`, 업로드 전환
+- [x] ~~**web** — 경로(key) 저장 + `assetUrl()`, 업로드 전환~~ — [PrayU-Web#489](https://github.com/TeamVisioneer/PrayU-Web/pull/489)
+- [x] ~~R2 버킷 2개·API 토큰·`r2.dev` 공개 설정·CORS·시크릿 4개(staging·prod)~~ — 2026-07-31 완료.
+      시크릿은 해시 대조로 값까지 검증했고, 로컬에서 staging 버킷에 실제 업로드·조회까지 확인
+- [ ] 🔴 **남은 것은 web 환경변수뿐** — Vercel `VITE_STORAGE_BASE_URL` → `../PrayU-web/docs/backlog.md`.
+      **넣기 전까지는 업로드가 계속 Supabase 로 나간다** (설계상 안전한 기본값)
 
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).

@@ -50,7 +50,7 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 
 | 이름 | 쓰는 곳 |
 |---|---|
-| `OPENAI_API_KEY` | bible·openai 함수 |
+| `OPENAI_SECRET_KEY` | bible·openai 함수 |
 | `KAKAO_ADMIN_KEY` | kakao-webhook |
 | `R2_ENDPOINT` · `R2_BUCKET` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` | 업로드 서명 (`POST /api/upload-url`) |
 
