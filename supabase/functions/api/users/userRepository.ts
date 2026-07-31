@@ -91,6 +91,8 @@ export class UserRepository {
         blocking_users: [],
         is_admin: false,
         premium_expired_at: null,
+        // 기존 web 탈퇴 흐름이 지우던 값 — 서버가 절차를 가져오면서 함께 옮긴다
+        terms_agreed_at: null,
         deleted_at: deletedAt,
       })
       .eq("id", userId);
