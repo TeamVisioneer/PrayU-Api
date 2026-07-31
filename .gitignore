@@ -11,3 +11,6 @@ node_modules
 
 # baseline dumps (contain secrets/PII - never commit)
 supabase/_baseline/
+
+# macOS
+.DS_Store
