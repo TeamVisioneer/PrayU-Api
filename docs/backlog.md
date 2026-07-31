@@ -53,8 +53,16 @@ staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭제(`should_soft_delete`)로 갈지 —
 그룹장이 탈퇴하면 그룹은 어떻게 되는지 같은 도메인 판단이 함께 필요하다.
 
-- [ ] 조치 방향 결정 후 수정 (인증·권한 로직이라 **사람 확인 후 진행**)
-- [ ] web 짝: 탈퇴 실패를 사용자에게 알리도록 `SettingDialog` 반환값 처리
+**결정 (2026-07-31): 소프트 삭제.** 계정을 못 쓰게 만들고 개인 식별정보를 지우되 기도 기록은 남긴다 —
+지우면 **함께 기도한 상대방 화면에서도 사라진다.** 그룹장은 **다른 멤버에게 이양**한다.
+완전 삭제는 나중에 **배치 하드 삭제**로 대응한다. 상세: [account-deletion-plan.md](account-deletion-plan.md)
+
+- [x] ~~Api — `profiles.deleted_at` 마이그레이션 + 소프트 삭제 절차~~ — [#56](https://github.com/TeamVisioneer/PrayU-Api/pull/56)
+- [ ] web 짝: 탈퇴 실패를 사용자에게 알리고, `deleted_at` 인 프로필은 **"(탈퇴유저)"** 로 표시
+- [ ] **배치 하드 삭제** — `deleted_at` 기준 선별. FK NO ACTION 을 어떻게 풀지(CASCADE 전환 vs 순차 삭제) 판단 필요.
+      기도제목 본문이 남는 것은 소프트 삭제의 본질적 한계라 여기서 해소한다
+- [ ] **이미 탈퇴를 시도했던 사용자 정리** — 하드 삭제 실패로 계정이 그대로 남은 사람들. prod 에 몇 명인지 확인 필요
+- [ ] 이양 알림 — 새 그룹장에게 알리는 흐름 (알림 설계가 따로 필요해 이번 범위 밖)
 
 ### 파일 스토리지 R2 이전 — 완료 (prod 는 release 시 반영)
 계획: [storage-r2-plan.md](storage-r2-plan.md) · 짝 작업: `../PrayU-web/docs/backlog.md`
