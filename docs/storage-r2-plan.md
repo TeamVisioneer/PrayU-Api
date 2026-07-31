@@ -66,6 +66,8 @@ Supabase Storage 무료 한도가 **1GB**이고, **2026-07-29 기준 이미 0.26
   (*"you will not be able to access Vercel Blob if limits are exceeded"*). 사용자 업로드가 멈춘다는 뜻이라
   무료 플랜으로는 위험하다. 커스텀 도메인도 지원하지 않는다. Pro 로 올린다면 다시 볼 만하다
 - **R2 + `file.prayu.site`** — R2 커스텀 도메인은 **해당 도메인이 같은 Cloudflare 계정의 zone** 이어야 한다.
+  DNS 를 Vercel 에 두고 zone 만 등록하는 partial(CNAME) setup 은 **Business 플랜 이상**,
+  하위 도메인만 위임하는 subdomain setup 은 **Enterprise 전용** (2026-07 Cloudflare 문서 확인).
   서브도메인만 위임하는 partial(CNAME) setup 은 **Business/Enterprise 전용**이라 무료로는 불가능하다.
   prayu.site 를 통째로 옮기는 선택지는 DNS 통합 관리 방침과 어긋나 접었다
 
@@ -239,7 +241,11 @@ R2 에는 RLS 가 없으므로 **서명 URL 을 내주는 엔드포인트**가 �
 ### R2 연결 후 확인할 것
 
 - 말씀카드·감사카드·즉석 공지 이미지 업로드 → R2 에 객체 생성 확인, DB 에 **키만** 저장됐는지 확인
-- **CORS** — 브라우저 PUT 이라 버킷에 허용 오리진이 없으면 여기서 막힌다 (로컬 검증으로는 드러나지 않는 항목)
+- **CORS** — 브라우저 PUT 이라 버킷에 허용 오리진이 없으면 여기서 막힌다 (로컬 검증으로는 드러나지 않는 항목).
+  실제 오리진은 staging `https://staging.prayu.site`, prod `https://prayu.site` + `https://www.prayu.site`
+  (+ 로컬 `http://localhost:5173`). `prayu-staging.vercel.app` 이 아니다 — 처음에 이걸로 잘못 적었다
+- `<img>` 로 보여주는 건 CORS 를 타지 않지만 **`fetch()` 로 읽으면 GET 도 CORS 를 탄다.**
+  지금은 전부 `<img>` 라 `PUT` 만 열어두면 되고, 캔버스 합성 등으로 이미지를 `fetch` 하게 되면 `GET` 을 추가한다
 - **기존 카드가 그대로 보이는지** — `image_key` 가 없는 행은 `image_url` 로 떨어져야 한다
 - 카카오 공유 썸네일이 새 URL 로 뜨는지
 - 비로그인 상태에서 서명 엔드포인트가 401 인지
