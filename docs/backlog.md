@@ -87,6 +87,35 @@ Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전
 - [ ] web 짝 — `OperationsTab` 서버 경로 전환 (Api merge 후)
 - [ ] `VITE_PREMIUM_PLAN_USERLIST` Vercel 환경변수 정리 — 코드에서 더 이상 안 읽는다 (사람 조작)
 
+### 가입 흐름 정리 — `handle_new_user` 트리거 제거 + Kakao secret 서버 이전 (묶음)
+
+**v1.0.0 에서 뺀다** (2026-07-31 결정). 인증 흐름 전체를 건드리는 작업이라 1년 만의 대형 릴리스에
+같이 태우기에는 불안하다. 릴리스 후 별도로 진행한다.
+
+**왜 묶는가**: 둘 다 "가입 순간에 서버가 개입할 지점이 없다"는 같은 제약에서 나온다.
+카카오 토큰 교환이 Edge Function 으로 가면 서버가 로그인 완료 시점을 알게 되고,
+그때 프로필 생성도 서버가 명시적으로 할 수 있다 — 트리거를 DB 에 둔 이유가 사라진다.
+따로 하면 인증 흐름을 두 번 흔들게 된다.
+
+- 🔴 **Kakao client secret 프론트 노출** — `KakaoTokenRepo` 가 브라우저에서 `kauth.kakao.com` 토큰 교환.
+  상세: [security-backlog.md](../../PrayU-web/docs/security-backlog.md) 2번
+- **`handle_new_user()` + `on_auth_user_created` 트리거 제거** — DB 로직을 앱으로 되돌린다
+  (CLAUDE.md "DB에 로직이 있는 지점" 대장의 1번 항목)
+
+**착수 전 풀어야 할 것** (조사부터 필요):
+
+| 쟁점 | 내용 |
+|---|---|
+| 로그인 경로가 3개다 | 카카오 `signInWithIdToken` · 애플 `signInWithOAuth` · 개발용 `signInWithPassword`. 트리거를 없애면 **셋 다** 프로필을 만들어야 한다 |
+| 애플은 서버 훅이 없다 | `signInWithOAuth` 는 브라우저 → GoTrue 리다이렉트라 Edge Function 이 끼어들 자리가 없다. 카카오만 서버로 옮기면 애플 가입은 프로필이 안 생긴다 |
+| 대안 후보 | ① Supabase **Auth Hook**(HTTP) 로 Edge Function 호출 — 트리거를 앱 코드로 옮기는 정석. 지원 범위 확인 필요 ② 첫 인증 로드 시 앱이 멱등 upsert — 단순하지만 "프로필 없는 세션" 구간이 생긴다 |
+| 실패 시 사용자 영향 | 프로필 생성이 실패하면 **가입은 됐는데 앱이 안 뜨는** 상태다. 트리거는 최소한 원자적이었다 — 옮기면 이 보장을 잃는다 |
+| 함께 볼 트리거 | `update_avatar_url_to_https()` — 카카오가 http URL 을 주던 시절의 방어. 같은 정리 대상 |
+| 로테이션 | 이전 후 카카오 콘솔에서 client secret 로테이션 (기존 값은 노출된 것으로 간주) |
+| prod 시크릿 준비 | prod 에는 `KAKAO_CLIENT_SECRET`·`KAKAO_RESTAPI_KEY` 가 **없다**(staging 에만 있음). 이 작업의 사람 단계 |
+
+- [ ] 조사 후 계획서 작성 (`docs/plans/`) — 인증 흐름이라 **사람 확인 후 진행**
+
 ### 함수 시크릿을 CI 로 주입 — 검토
 지금 Edge Function 시크릿(`OPENAI_SECRET_KEY`·`KAKAO_ADMIN_KEY`·`R2_*` 등)은 **대시보드에 사람이 손으로** 넣는다.
 staging/prod 에 뭔가 반영되는 경로 중 **유일하게 CI 를 안 거치는 예외**이고, 그래서 두 문제가 있다 —
@@ -113,18 +142,14 @@ staging 에 넣고 prod 에 빠뜨리면 **release 후 500 이 날 때** 알게 
 - [ ] **카카오 콘솔 웹훅 등록(prod)** — Api release 후 `https://qggewtakkrwcclyxtxnz.supabase.co/functions/v1/kakao-webhook`, 메서드 **POST**. staging은 등록 완료
 - [ ] **`KAKAO_ADMIN_KEY` 시크릿 확인** — 각 환경 시크릿이 해당 카카오 앱 어드민 키와 일치하는지
 - [ ] **카카오 [플랫폼] > [Web] 사이트 도메인** — prod 앱에 서비스 도메인 등록 확인 (staging에서 4019 `domain mismatched`로 겪은 항목)
-- [ ] 🔴 **코드에 없는데 배포된 채 살아있는 edge function 3개 삭제** (2026-07-31 `functions list` 로 확인)
-
-  | 함수 | staging | prod | 정체 |
-  |---|---|---|---|
-  | `delete-user` | v20 ACTIVE | **v13 ACTIVE** | 2024년. entrypoint 가 옛 레포 경로(`PrayU-Web/...`) — **레포에 코드가 없는 계정 삭제 엔드포인트** |
-  | `push` | v50 ACTIVE | **v21 ACTIVE** | Firebase 푸시. 코드는 #37 에서 제거 |
-  | `bulk-push` | v12 ACTIVE | 없음 | Firebase 대량 푸시 |
-
-  셋 다 `verify_jwt: true` 로 살아 있고, `FIREBASE_*` 시크릿도 양쪽에 남아 있어 **호출하면 실제로 동작할 수 있다.**
-  `delete-user` 는 소프트 삭제로 정비한 탈퇴 정책([plans/premium-guard.md] 아님 — [archive/account-deletion-plan.md](archive/account-deletion-plan.md))을 우회하는 경로다.
-- [ ] **`FIREBASE_CLIENT_EMAIL`·`FIREBASE_PRIVATE_KEY`·`FIREBASE_PROJECT_ID` 시크릿 제거** (staging·prod) —
-      읽는 코드가 0건이다. 위 함수 3개 삭제 후 진행
+- [x] ~~**코드에 없는데 배포된 채 살아있던 edge function 3개 삭제**~~ (2026-07-31 완료) —
+      `delete-user`(2024년, 레포에 코드 없는 계정 삭제 엔드포인트) · `push` · `bulk-push`.
+      셋 다 `verify_jwt: true` 로 ACTIVE 였다. 삭제 후 양쪽에 `api`·`bible`·`onesignal`·`openai`(+staging `kakao-webhook`)만 남은 것 확인
+- [x] ~~**`FIREBASE_*` 시크릿 3개 제거** (staging·prod)~~ (2026-07-31 완료) —
+      Firebase 흔적을 뿌리까지 정리했다: `profiles.fcm_token` 컬럼(#59) · 함수 3개 · 시크릿 3개 · 로컬 `.env` ·
+      레거시 트리거(2026-07-18). 읽는 코드·남은 데이터·살아있는 엔드포인트 모두 0
+- [ ] **prod 에 `KAKAO_CLIENT_SECRET`·`KAKAO_RESTAPI_KEY` 등록** — staging 에만 있다.
+      "가입 흐름 정리" 작업(위) 착수 시 필요
 - [ ] 🔴 **운영 관리자 계정에 `is_admin = true` 설정** — **prod release 직후 반드시.** 안 하면 `/admin`이 아무도 못 들어간다(이메일 하드코딩을 걷어내고 이 값만 본다). staging은 2026-07-27 처리 완료
   ```sql
   update public.profiles p set is_admin = true

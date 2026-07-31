@@ -24,8 +24,8 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 
 | 지점 | 하는 일 | DB에 둔 이유 |
 |---|---|---|
-| `handle_new_user()` + `auth.users`의 `on_auth_user_created` 트리거 | 가입 시 `profiles` 행 생성 (`full_name`/`avatar_url`을 `raw_user_meta_data`에서 복사) | `auth.users` INSERT는 GoTrue 내부에서 일어나 앱이 개입할 지점이 없다 |
-| `update_avatar_url_to_https()` + `profiles`의 `avatar_url_https_trigger` | `avatar_url`이 `http://`면 `https://`로 치환 | 데이터 정규화. 카카오가 http URL을 주던 시절의 방어이며, 앱 여러 경로(가입·프로필 수정)에 흩어 넣는 것보다 한 곳이 안전 |
+| `handle_new_user()` + `auth.users`의 `on_auth_user_created` 트리거 | 가입 시 `profiles` 행 생성 (`full_name`/`avatar_url`을 `raw_user_meta_data`에서 복사) | `auth.users` INSERT는 GoTrue 내부에서 일어나 앱이 개입할 지점이 없다. **제거 검토 중** — Kakao 토큰 교환을 서버로 옮기면 이 제약이 풀린다 → `docs/backlog.md` "가입 흐름 정리" |
+| `update_avatar_url_to_https()` + `profiles`의 `avatar_url_https_trigger` | `avatar_url`이 `http://`면 `https://`로 치환 | 데이터 정규화. 카카오가 http URL을 주던 시절의 방어이며, 앱 여러 경로(가입·프로필 수정)에 흩어 넣는 것보다 한 곳이 안전. **위 트리거와 함께 정리 대상** |
 | `rls_auto_enable` 이벤트 트리거 | 새 테이블 생성 시 RLS 자동 활성화 | 실수 방지 가드. 마이그레이션 작성자가 RLS를 잊어도 기본이 잠긴 상태가 된다 |
 | `profiles`의 컬럼 단위 UPDATE 권한 (`is_admin`·`premium_expired_at` 제외) | 자기 `is_admin`(권한 상승)·`premium_expired_at`(프리미엄 무료 취득) 설정 차단. 어드민의 프리미엄 쓰기는 `POST /api/admin/premium` 으로 | RLS 정책은 "행"만 가리고 컬럼을 못 가린다. 앱에서 막으면 클라이언트가 직접 PostgREST를 호출해 우회 가능 — **앱에서는 구조적으로 불가능한 방어** |
 | RLS 정책 전반 | 행 가시성·쓰기 권한 | 권한이지 비즈니스 로직이 아니다. 단, 조건에 상태·기간 같은 규칙이 섞이면 앱으로 옮긴다 |
