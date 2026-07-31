@@ -5,6 +5,7 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 ## 작업 착수 규칙
 
 - 🔴 **merge·main push 는 사용자가 그 메시지에서 시킬 때만.** 기본 범위는 브랜치 push + PR 생성까지다. 이전 메시지의 "머지해줘"는 그 PR 한정이며, 문서 전용 변경도 main 에 직접 커밋하지 않는다 (상세: `../CLAUDE.md`)
+- **문서 갱신은 그 작업 PR 에 함께 넣는다.** 백로그·계획서만 고치는 별도 PR 을 만들지 않는다 (상세: `../CLAUDE.md`)
 - **docs 먼저, 코드는 그 다음.** 피처/개선 작업 시작 시 코드부터 수정하지 않는다. 설계·계획 문서를 먼저 작성(또는 기존 문서 갱신)하고 방향 확인 후 구현한다. (웹 관련 문서는 `../PrayU-web/docs/` 참조)
 - **[docs/backlog.md](docs/backlog.md)가 이 레포 작업 목록의 원본이다.** 세션 시작 시 먼저 읽고, 작업 중 발견한 후속 이슈는 그 자리에서 여기에 추가한다 (대화·PR 코멘트로만 남기지 않는다). 프론트 항목은 `../PrayU-web/docs/backlog.md`.
 
@@ -50,7 +51,7 @@ PrayU 백엔드 — Supabase 마이그레이션·Edge Functions·seed의 주인.
 
 | 이름 | 쓰는 곳 |
 |---|---|
-| `OPENAI_API_KEY` | bible·openai 함수 |
+| `OPENAI_SECRET_KEY` | bible·openai 함수 |
 | `KAKAO_ADMIN_KEY` | kakao-webhook |
 | `R2_ENDPOINT` · `R2_BUCKET` · `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` | 업로드 서명 (`POST /api/upload-url`) |
 
