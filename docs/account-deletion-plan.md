@@ -23,12 +23,14 @@ signOut();
 
 | 항목 | 결정 |
 |---|---|
-| 방식 | **소프트 삭제** — 계정을 못 쓰게 만들고 **개인 식별정보를 지운다**. 기도 기록은 남긴다 |
+| 방식 | **소프트 삭제** — 계정을 못 쓰게 만들고 **탈퇴로 표시**한다. 데이터는 지우지 않는다 |
 | 그룹장 | **다른 멤버에게 이양** |
 | 완전 삭제 | 이번 범위 밖. 나중에 **배치로 하드 삭제**를 돌린다 |
 
 기도 기록을 지우면 **함께 기도한 사람들의 화면에서도 사라진다.** 남을 위해 기도한 흔적이
 상대 쪽에서 통째로 없어지는 것은 서비스 성격상 손실이 크다고 봤다.
+프로필도 지우지 않는다 — 문의 대응·이상 행위 추적 같은 운영이 남아 있고, 지우면 되돌릴 수 없다.
+**노출을 막는 것과 파기하는 것은 다른 문제**이며, 파기는 배치 하드 삭제가 맡는다.
 
 ## GoTrue 소프트 삭제가 실제로 하는 일 — 로컬 실측
 
@@ -52,7 +54,8 @@ signOut();
 
 1. **identity 가 익명화되므로 카카오로 다시 로그인해도 같은 계정으로 못 돌아온다** — 새 계정이 생긴다.
    소프트 삭제가 "계정을 못 쓰게 만든다"는 요건을 실제로 충족한다.
-2. **GoTrue 는 `public.profiles` 를 건드리지 않는다.** 개인정보 삭제는 **우리가 해야 한다.**
+2. **GoTrue 는 `public.profiles` 를 건드리지 않는다.** 그래서 탈퇴 여부를 나타낼 표시(`deleted_at`)를 우리가 남겨야 하고,
+   화면에서 가리는 일도 우리 몫이다.
 
 ## 설계
 
@@ -61,13 +64,13 @@ signOut();
 ```
 1. 그룹장인 그룹 → 이양
 2. 모든 그룹에서 나가기 (member.deleted_at)
-3. profiles 개인정보 삭제 + deleted_at
+3. profiles 탈퇴 표시 (deleted_at)
 4. auth 소프트 삭제  ← 마지막
 ```
 
 **auth 를 마지막에 두는 이유**: 여기서 세션이 끊긴다. 먼저 하면 이후 단계가 실패했을 때
-사용자는 로그인도 못 하는데 개인정보는 남은 상태가 되고, 스스로 재시도할 방법이 없다.
-반대 순서면 실패해도 개인정보는 이미 지워졌고 사용자가 다시 시도할 수 있다.
+사용자는 로그인도 못 하는데 그룹장은 그대로인 어중간한 상태가 되고, 스스로 재시도할 방법이 없다.
+반대 순서면 실패해도 사용자가 다시 시도할 수 있다.
 
 **각 단계는 재실행 안전해야 한다** — 중간 실패 후 다시 눌렀을 때 정상 완료되도록.
 
@@ -108,7 +111,7 @@ signOut();
 |---|---|
 | `supabase/migrations/<ts>_add_profiles_deleted_at.sql` (신규) | `profiles.deleted_at timestamptz` (널 허용). 배치 조회용 부분 인덱스 |
 | `supabase/functions/api/users/userService.ts` (신규) | 탈퇴 절차 오케스트레이션. `softDeleteUser(userId)` — 위 4단계를 순서대로 수행하고 단계별 실패를 구분해 돌려준다 |
-| `supabase/functions/api/users/userRepository.ts` (수정) | 데이터 조작만 담당: `transferGroupLeadership` · `leaveAllGroups` · `anonymizeProfile` · `softDeleteAuthUser`. 기존 `deleteUser`(하드) 제거 |
+| `supabase/functions/api/users/userRepository.ts` (수정) | 데이터 조작만 담당: `transferGroupLeadership` · `leaveAllGroups` · `markProfileDeleted` · `softDeleteAuthUser`. 기존 `deleteUser`(하드) 제거 |
 | `supabase/functions/api/users/userController.ts` (수정) | 서비스 호출로 교체, 실패 시 상태코드 구분 |
 
 **새 파일을 만드는 이유**: 탈퇴는 순서가 있는 다단계 절차이고 중간 실패 처리가 필요하다.
@@ -120,15 +123,17 @@ signOut();
 | 파일 | 내용 |
 |---|---|
 | `src/components/profile/SettingDialog.tsx` (수정) | `deleteUser` **반환값 확인** — 실패하면 로그아웃하지 않고 안내한다. 지금은 실패해도 성공처럼 보인다 |
-| 안내 문구 (수정 제안) | "모든 데이터가 삭제됩니다" 는 소프트 삭제 후 **사실이 아니다.** 문구 확정은 사람 판단 필요 |
+| `src/lib/profileName.ts` (신규) | `deleted_at` 을 보고 이름을 "(탈퇴유저)", 아바타를 기본 이미지로. **가리는 일은 표시 계층의 몫이다** |
+| `src/apis/{group,prayCard,member}.ts` (수정) | 중첩 `profiles` select 에 `deleted_at` 추가 |
+| `src/apis/user.ts` (수정) | 클라이언트가 하던 삭제 절차 제거 — 서버가 절차를 소유한다 |
+| 안내 문구 | "모든 데이터가 삭제됩니다" 는 소프트 삭제 후 **사실이 아니다** |
 
 ## 검증
 
-- 로컬 시드 계정으로 탈퇴 → `profiles` 에 개인정보 없음·`deleted_at` 설정, `auth.users` 익명화, 재로그인 실패
+- 로컬 시드 계정으로 탈퇴 → `profiles.deleted_at` 설정, `auth.users` 익명화, 재로그인 실패
 - 그룹장 계정으로 탈퇴 → 남은 멤버 중 가장 오래된 사람이 새 그룹장, 멤버가 없으면 그룹 소프트 삭제
-- **다른 사람 화면 회귀** — 탈퇴자가 쓴 기도카드·기도 기록이 그대로 보이고 이름이 `(탈퇴한 사용자)` 로 뜨는지, 아바타 없는 상태에서 레이아웃이 깨지지 않는지
+- **다른 사람 화면 회귀** — 탈퇴자가 쓴 기도카드·기도 기록이 그대로 보이고, 이름이 `(탈퇴유저)`·아바타가 기본 이미지로 바뀌는지
 - 중간 실패 재시도 — 두 번 눌러도 정상 완료되는지
-- 탈퇴자에게 푸시가 가지 않는지
 
 ## 한계 — 이번에 하지 않는 것
 
