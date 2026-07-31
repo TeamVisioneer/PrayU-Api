@@ -27,7 +27,7 @@
 **staging DB 반영 확인** (2026-07-28): 31,138 → **31,102행** · 신 15:5 등 누락 절 복구 · `paragraph=0` **0행**.
 staging web 번들에 표시 정리(`/○/g`) 포함 확인.
 
-- [ ] **staging UI 확인**(로그인 필요라 사람이 직접): QT 본문·말씀카드 생성 본문에 `○`·`<구역제목>` 없음 / 구절 픽커에서 기존에 빈 결과였던 절이 나옴(신 15:5, 시 92:2-3, 렘 32:4-5, 겔 24:5 등 14절)
+- [x] ~~**staging UI 확인**~~ — 2026-07-31 완료. `○`·`<구역제목>` 없음, 누락 절 복구 확인
 - [x] ~~⚠️ prod release 순서가 평소와 반대: web 먼저 → Api~~ → **철회. 평소 규칙대로 Api 먼저 → web** (2026-07-31 결정)
   - 당초 근거: Api 가 먼저 나가면 본문에 들어온 `○` 가 **구버전 web 에 그대로 노출**된다
   - 뒤집은 이유: R2 업로드가 **정반대 순서(Api 먼저)** 를 요구하고, 어기면 업로드가 500 이다.
@@ -56,7 +56,7 @@ FK 를 CASCADE 로 바꿀지, 함수에서 순서대로 지울지, 소프트 삭
 - [ ] 조치 방향 결정 후 수정 (인증·권한 로직이라 **사람 확인 후 진행**)
 - [ ] web 짝: 탈퇴 실패를 사용자에게 알리도록 `SettingDialog` 반환값 처리
 
-### 파일 스토리지 R2 이전 — 코드 완료, staging 전환만 남음
+### 파일 스토리지 R2 이전 — 완료 (prod 는 release 시 반영)
 계획: [storage-r2-plan.md](storage-r2-plan.md) · 짝 작업: `../PrayU-web/docs/backlog.md`
 
 Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전 비용을 없앤다.
@@ -66,8 +66,10 @@ Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전
 - [x] ~~**web** — 경로(key) 저장 + `assetUrl()`, 업로드 전환~~ — [PrayU-Web#489](https://github.com/TeamVisioneer/PrayU-Web/pull/489)
 - [x] ~~R2 버킷 2개·API 토큰·`r2.dev` 공개 설정·CORS·시크릿 4개(staging·prod)~~ — 2026-07-31 완료.
       시크릿은 해시 대조로 값까지 검증했고, 로컬에서 staging 버킷에 실제 업로드·조회까지 확인
-- [ ] 🔴 **남은 것은 web 환경변수뿐** — Vercel `VITE_STORAGE_BASE_URL` → `../PrayU-web/docs/backlog.md`.
-      **넣기 전까지는 업로드가 계속 Supabase 로 나간다** (설계상 안전한 기본값)
+- [x] ~~web 환경변수 `VITE_STORAGE_BASE_URL`~~ — staging 등록·재배포·동작 확인 완료, prod 등록 완료(release 때 반영)
+
+**이 작업은 끝났다.** 남은 것은 prod release 뿐이며, 그때 R2 가 prod 에서도 켜진다.
+기존 Supabase 파일은 그대로 서빙되고, 옮길지 여부는 별도 판단 (계획서의 "기존 이미지는 이번에 건드리지 않는다" 절).
 
 ### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
 사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
@@ -121,6 +123,8 @@ staging 에 넣고 prod 에 빠뜨리면 **release 후 500 이 날 때** 알게 
 
 | 날짜 | 내용 | PR |
 |---|---|---|
+| 2026-07-31 | 신규 이미지 업로드를 Cloudflare R2 로 — `image_key` 컬럼 + 서명 URL 엔드포인트, 경로만 저장 | #50, PrayU-Web#489 |
+| 2026-07-31 | 원격 쓰기·merge·push 를 `.claude/settings.json` 권한 규칙으로 차단 | #53 |
 | 2026-07-28 | 개발용 계정·더미 데이터 (`seed-dev.sh` + `dev/seed-dev.sql`) — 로컬 이메일 로그인으로 로그인 뒤 화면 확인 가능 | #46 |
 | 2026-07-28 | 성경 본문을 원본(goodtv)과 동기화 — 5,538행 교정·누락 절 14행 추가·유령 행 50행 삭제, seed 재생성 | #44 |
 | 2026-07-27 | 공지 구조 정리 — `images`(URL 배열) + `body`(마크다운), `slides` 제거 및 데이터 이관 | #41 |
