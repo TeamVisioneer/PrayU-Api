@@ -80,11 +80,12 @@ Supabase Storage 무료 한도 1GB. **신규 업로드만 R2 로** 돌려 이전
 **이 작업은 끝났다.** 남은 것은 prod release 뿐이며, 그때 R2 가 prod 에서도 켜진다.
 기존 Supabase 파일은 그대로 서빙되고, 옮길지 여부는 별도 판단 (계획서의 "기존 이미지는 이번에 건드리지 않는다" 절).
 
-### `premium_expired_at` 자기부여 차단 — 사용자 판단 대기
-사용자가 자기 프로필의 `premium_expired_at`을 임의 설정해 **프리미엄(그룹 무제한)을 무료로 얻을 수 있다** (로컬 실증 완료).
-`is_admin`과 같은 원인(컬럼을 제한하지 않는 UPDATE 정책)이며, 조치도 같다 — 컬럼 단위 UPDATE 권한 회수.
-지금 못 막는 이유: 어드민 화면이 **클라이언트에서 직접** 이 컬럼에 쓴다 → 잠그면 어드민 기능이 먼저 깨진다.
-→ PR C(admin edge function)를 폐기했으므로, 막기로 하면 **어드민 프리미엄 설정만을 위한 최소 서버 경로**를 따로 만들고 컬럼 권한을 회수한다. 상세: [security-backlog.md](../../PrayU-web/docs/security-backlog.md) 8번
+### `premium_expired_at` 자기부여 차단 — 진행 중 (v1.0.0 포함)
+계획: [plans/premium-guard.md](plans/premium-guard.md) · 상세: [security-backlog.md](../../PrayU-web/docs/security-backlog.md) 8번
+
+- [x] ~~Api — `POST /api/admin/premium` + 컬럼 권한 회수 마이그레이션~~ — #59
+- [ ] web 짝 — `OperationsTab` 서버 경로 전환 (Api merge 후)
+- [ ] `VITE_PREMIUM_PLAN_USERLIST` Vercel 환경변수 정리 — 코드에서 더 이상 안 읽는다 (사람 조작)
 
 ### 함수 시크릿을 CI 로 주입 — 검토
 지금 Edge Function 시크릿(`OPENAI_SECRET_KEY`·`KAKAO_ADMIN_KEY`·`R2_*` 등)은 **대시보드에 사람이 손으로** 넣는다.
