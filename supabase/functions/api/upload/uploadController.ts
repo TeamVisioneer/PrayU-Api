@@ -3,7 +3,7 @@ import { corsHeaders } from "../../_shared/cors.ts";
 import { presignPutUrl } from "./uploadService.ts";
 
 /** 올릴 수 있는 용도. 경로를 클라이언트가 정하지 못하게 이 목록으로 제한한다 */
-const KINDS = ["bible_card", "thanks_card", "notice"] as const;
+const KINDS = ["bible_card", "thanks_card", "notice", "avatar"] as const;
 type Kind = (typeof KINDS)[number];
 
 /** 허용 타입 → 확장자. 목록에 없으면 거부한다 */
