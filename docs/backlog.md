@@ -21,6 +21,24 @@
 
 ## 다음 작업
 
+### 카카오 원탭 로그인 — `auth-handoff` EF + 테이블 (Api 단계, 선행)
+
+계획: [PrayU-web/docs/plans/kakao-login-handoff.md](../../PrayU-web/docs/plans/kakao-login-handoff.md) (주도: web · merge 순서 **Api 먼저 → web**)
+
+카카오톡 앱 전환 로그인의 복귀 문제를 세션 릴레이로 해결. 인증 코어 무변경 — 1회용 토큰 우체통만 신설.
+
+- [ ] `auth_handoff` 테이블 마이그레이션 — RLS 전면 잠금(정책 0), **하드 삭제**(소프트 삭제 관례의 의도적 예외 — 토큰 잔존 방지)
+- [ ] EF `auth-handoff` (`/deposit`·`/claim`) — deposit 은 access_token 서버 검증, claim 은 secret 커밋 검증·1회용·TTL 3분. `verify_jwt=false`(claim 은 비로그인 호출 — 근거 주석)
+
+### 시크릿 로테이션 대장 — `secret_rotation` 테이블 (Api 단계)
+
+계획: [PrayU-web/docs/plans/secret-expiry-admin-alert.md](../../PrayU-web/docs/plans/secret-expiry-admin-alert.md) (주도: web · merge는 **Api 먼저 → web**)
+
+2026-08 애플 로그인 장애(Apple client secret 만료) 재발 방지. 어드민이 시크릿 갱신을 기록하고 만료 임박 시 앱에서 alert.
+
+- [ ] `secret_rotation` 테이블 마이그레이션 — append-only, RLS **select·insert 모두 `is_admin`**(시크릿 메타데이터라 `using(true)` 예외), 트리거·RPC 없음
+- [ ] 타입 재생성(`npm run supabase-sync`) 후 web 짝 PR에 알림
+
 ### 성경 본문 원본 동기화 — staging 반영 완료, prod 대기
 [#44](https://github.com/TeamVisioneer/PrayU-Api/pull/44) merged (2026-07-28) · 짝 PR [PrayU-Web#475](https://github.com/TeamVisioneer/PrayU-Web/pull/475) merged · 상세: [bible-sync-plan.md](archive/bible-sync-plan.md)
 

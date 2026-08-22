@@ -226,3 +226,8 @@ verify_jwt = true
 # 함수 내부의 KakaoAK 어드민 키 대조가 유일한 방어선이다 (kakao-webhook/index.ts 참조)
 [functions.kakao-webhook]
 verify_jwt = false
+
+# 세션 핸드오프: claim 은 "아직 로그인 안 된 원래 탭"이 호출하므로 JWT가 없다.
+# deposit 은 서버측 auth.getUser 검증, claim 은 secret 커밋 검증이 방어선 (auth-handoff/index.ts 참조)
+[functions.auth-handoff]
+verify_jwt = false
