@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      auth_handoff: {
+        Row: {
+          access_token: string
+          created_at: string
+          nonce: string
+          refresh_token: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          nonce: string
+          refresh_token: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          nonce?: string
+          refresh_token?: string
+        }
+        Relationships: []
+      }
       bible: {
         Row: {
           book: number
