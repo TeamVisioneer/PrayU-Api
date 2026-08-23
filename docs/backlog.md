@@ -148,6 +148,13 @@ staging 에 넣고 prod 에 빠뜨리면 **release 후 500 이 날 때** 알게 
 - [ ] 배포 워크플로 수정이라 **사람 확인 후 진행**. 시크릿 보관처가 하나 늘어나는 대가(로테이션 시 GitHub 도 갱신)를 감수할지 판단 필요
 - 판단 보류 근거: 시크릿이 4~6개 수준이면 사람이 관리 가능한 규모다. 개수가 늘거나 환경이 추가되면 그때 한다
 
+### 프로필 사진 변경 (짝 작업 — 주도: web)
+
+계획: [PrayU-web/docs/plans/profile-photo.md](../../PrayU-web/docs/plans/profile-photo.md)
+
+- [x] ~~Api — `upload-url` KINDS 에 `avatar` 추가~~ (이 레포의 유일한 단계. merge 는 **Api 먼저 → web**)
+- [ ] 후속: 아바타 재변경 시 옛 R2 파일이 orphan 으로 남는다 — 삭제 훅/정리 배치 미구현 (용량 문제가 되면 착수)
+
 ### 기타
 - [ ] QT 응답 토큰을 `llm_usage_log`에 기록 (현재 호출 수만 차감)
 - [ ] `deno.lock` 커밋 여부 결정
