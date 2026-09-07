@@ -7,7 +7,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 // deposit: 카카오톡 인앱브라우저(로그인 완결 컨텍스트)가 세션 토큰을 nonce 로 예치
 // claim:   원래 탭이 secret 을 제시해 토큰 수령 — nonce = SHA-256(secret) 커밋 검증
 // resolve: 안드로이드 원탭용 — GoTrue authorize 의 302 Location(kauth URL)에서 state 등을
-//          꺼내 준다 (docs: PrayU-web/docs/plans/kakao-android-onetap.md)
+//          꺼내 준다 (docs: PrayU-web/docs/archive/kakao-android-onetap.md)
 //
 // 보안 불변식 (전부 이 파일이 강제한다):
 // - deposit 은 access_token 을 auth.getUser() 로 서버 검증한 뒤에만 저장 (위조 토큰 예치 차단)

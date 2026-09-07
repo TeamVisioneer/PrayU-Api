@@ -29,7 +29,7 @@
 
 - [x] ~~`auth_handoff` 테이블 마이그레이션~~ — RLS 전면 잠금(정책 0), **하드 삭제**(소프트 삭제 관례의 의도적 예외 — 토큰 잔존 방지) — #62, prod v1.0.0 (2026-08-23)
 - [x] ~~EF `auth-handoff` (`/deposit`·`/claim`)~~ — deposit 은 access_token 서버 검증, claim 은 secret 커밋 검증·1회용·TTL 3분. `verify_jwt=false`(claim 은 비로그인 호출 — 근거 주석) — #62, prod v1.0.0
-- [ ] **`/resolve` 추가 (안드로이드 원탭, 2026-09-07)** — GoTrue authorize 302 의 Location(kauth)에서 `client_id`·`redirect_uri`·`state`·`scope` 를 꺼내 준다. 클라이언트는 `redirect_to` 만 주고 URL 은 서버가 `SUPABASE_URL` 로 조립(임의 fetch 불가). 계획: [PrayU-web/docs/plans/kakao-android-onetap.md](../../PrayU-web/docs/plans/kakao-android-onetap.md) · prod 는 `v1.0.1` 로 web 보다 먼저
+- [x] ~~**`/resolve` 추가 (안드로이드 원탭)**~~ — #64 · **prod `v1.0.1` (2026-09-07)**. — GoTrue authorize 302 의 Location(kauth)에서 `client_id`·`redirect_uri`·`state`·`scope` 를 꺼내 준다. 클라이언트는 `redirect_to` 만 주고 URL 은 서버가 `SUPABASE_URL` 로 조립(임의 fetch 불가). 계획: [PrayU-web/docs/archive/kakao-android-onetap.md](../../PrayU-web/docs/archive/kakao-android-onetap.md)
 
 ### 시크릿 로테이션 대장 — `secret_rotation` 테이블 (Api 단계)
 
