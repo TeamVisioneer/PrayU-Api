@@ -6,6 +6,8 @@ import { corsHeaders } from "../_shared/cors.ts";
 //
 // deposit: 카카오톡 인앱브라우저(로그인 완결 컨텍스트)가 세션 토큰을 nonce 로 예치
 // claim:   원래 탭이 secret 을 제시해 토큰 수령 — nonce = SHA-256(secret) 커밋 검증
+// resolve: 안드로이드 원탭용 — GoTrue authorize 의 302 Location(kauth URL)에서 state 등을
+//          꺼내 준다 (docs: PrayU-web/docs/plans/kakao-android-onetap.md)
 //
 // 보안 불변식 (전부 이 파일이 강제한다):
 // - deposit 은 access_token 을 auth.getUser() 로 서버 검증한 뒤에만 저장 (위조 토큰 예치 차단)
@@ -14,6 +16,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const TTL_MS = 3 * 60 * 1000;
 const HEX64 = /^[0-9a-f]{64}$/;
+const KAUTH_HOST = "kauth.kakao.com";
 
 const json = (c: Context, status: number, body: Record<string, unknown>) =>
   c.json(body, status as 200, corsHeaders);
@@ -110,6 +113,77 @@ export class AuthHandoffController {
     return json(c, 200, {
       access_token: row.access_token,
       refresh_token: row.refresh_token,
+    });
+  }
+
+  /**
+   * 안드로이드 카카오 원탭: 카카오톡 로그인 액티비티 intent 에 실을 authorize 파라미터를 돌려준다.
+   * 브라우저 JS 는 authorize 302 의 Location 을 볼 수 없어(불투명 리다이렉트) 서버가 대신 읽는다.
+   *
+   * 클라이언트가 URL 을 주지 않는다 — redirect_to 만 받고 authorize URL 은 여기서 SUPABASE_URL 로
+   * 조립한다(임의 URL fetch 불가). redirect_to 의 허용 여부는 GoTrue 가 판단한다(미허용이면 Site URL).
+   * state 는 어차피 kauth URL 에 노출되는 값이라 새 노출이 없다.
+   */
+  async resolve(c: Context) {
+    let body: { redirect_to?: string };
+    try {
+      body = await c.req.json();
+    } catch {
+      return json(c, 400, { error: "invalid body" });
+    }
+    const { redirect_to } = body;
+    if (
+      typeof redirect_to !== "string" || redirect_to.length === 0 ||
+      redirect_to.length > 2048 || !/^https?:\/\//.test(redirect_to)
+    ) {
+      return json(c, 400, { error: "invalid params" });
+    }
+
+    const authorizeUrl = new URL(
+      "/auth/v1/authorize",
+      Deno.env.get("SUPABASE_URL")!,
+    );
+    authorizeUrl.searchParams.set("provider", "kakao");
+    authorizeUrl.searchParams.set("redirect_to", redirect_to);
+
+    let location: string | null;
+    try {
+      const res = await fetch(authorizeUrl, {
+        redirect: "manual",
+        headers: { apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+      });
+      location = res.status >= 300 && res.status < 400
+        ? res.headers.get("location")
+        : null;
+    } catch {
+      location = null;
+    }
+    if (!location) {
+      console.error("auth-handoff resolve: authorize did not redirect");
+      return json(c, 502, { error: "authorize failed" });
+    }
+
+    let kauth: URL;
+    try {
+      kauth = new URL(location);
+    } catch {
+      return json(c, 502, { error: "authorize failed" });
+    }
+    const p = kauth.searchParams;
+    const client_id = p.get("client_id");
+    const redirect_uri = p.get("redirect_uri");
+    const state = p.get("state");
+    if (
+      kauth.hostname !== KAUTH_HOST || !client_id || !redirect_uri || !state
+    ) {
+      console.error("auth-handoff resolve: unexpected authorize location host");
+      return json(c, 502, { error: "authorize failed" });
+    }
+    return json(c, 200, {
+      client_id,
+      redirect_uri,
+      state,
+      scope: p.get("scope") ?? undefined,
     });
   }
 }
