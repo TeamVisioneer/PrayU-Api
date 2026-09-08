@@ -21,6 +21,14 @@
 
 ## 다음 작업
 
+### v1 신규 피처 요청의 Api(스키마) 단계 — 2026-09-08, 범위 결정 대기
+
+주도·상세: [PrayU-web/docs/backlog.md](../../PrayU-web/docs/backlog.md) "신규 피처 요청" 절. 셋 다 DB schema 변경이라 **docs 먼저 + 사람 확인** 대상, merge 는 Api 먼저 → web.
+
+- [ ] **기도카드 기간** — `pray_card` 에 `started_at`/`ended_at`(또는 유사) 컬럼. 만료 판정을 web 이 주 단위(`isCurrentWeek`)에서 기간 비교로 바꾸는 것의 저장소. [pray-card-restructure.md](../../PrayU-web/docs/plans/identity/pray-card-restructure.md) 재편과 순서 정리 필요
+- [ ] **member.role** — 그룹장/부그룹장 role 컬럼 신설(+타입 재생성). 현재 그룹장은 `group.user_id` 라 "그룹장을 role 로 통합할지" 먼저 결정. 탈퇴 이양 `api/users` `findNextLeaderId`(부그룹장 우선) 재검토
+- [ ] **그룹 공용 카드** — `pray_card` 에 그룹 소유/카드 종류 표현 수단 신설. ⚠️ 재편(`group_id` 제거 → `pray_card_share`)과 정면 충돌 — 재편 위에서 설계할지 독립 최소 플래그로 갈지 결정. 작성 권한은 edge function(RLS 아님)
+
 ### 카카오 원탭 로그인 — `auth-handoff` EF + 테이블 (Api 단계, 선행)
 
 계획: [PrayU-web/docs/plans/kakao-login-handoff.md](../../PrayU-web/docs/plans/kakao-login-handoff.md) (주도: web · merge 순서 **Api 먼저 → web**)
